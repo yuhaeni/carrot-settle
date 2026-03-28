@@ -70,11 +70,12 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 
 ## GitHub Issue 체크리스트 관리
 
-작업 완료 후 반드시 연관된 GitHub 이슈의 체크리스트를 확인하고, 정상 수행된 항목은 체크로 변경한다.
+작업 완료 후 반드시 연관된 GitHub 이슈의 체크리스트를 확인하고, 정상 수행된 항목은 체크로 변경한다. **모든 항목이 완료되면 이슈를 닫는다.**
 
 - **Acceptance Criteria**: Given-When-Then 기준으로 실제 동작 여부를 확인한 뒤 체크
 - **Tasks**: 코드/파일이 실제로 존재하거나 동작이 확인된 항목만 체크
 - 미완료 항목은 체크하지 않는다
+- 모든 AC + Tasks가 체크되면 `gh issue close`로 이슈를 닫고, 완료 근거를 코멘트로 남긴다
 
 ```bash
 # 이슈 내용 확인
@@ -82,6 +83,9 @@ gh issue view [이슈번호] --repo yuhaeni/carrot-settle
 
 # 체크리스트 업데이트
 gh issue edit [이슈번호] --repo yuhaeni/carrot-settle --body "[업데이트된 본문]"
+
+# 이슈 닫기 (완료 근거 코멘트 포함)
+gh issue close [이슈번호] --repo yuhaeni/carrot-settle --comment "[완료 근거]"
 ```
 
 ## Branching & Commit
