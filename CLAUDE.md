@@ -68,6 +68,22 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 
 `compose.yaml`에 PostgreSQL과 Redis가 정의되어 있으며, `spring-boot-docker-compose` 의존성으로 `bootRun` 시 자동 기동된다. 테스트 환경은 Testcontainers가 별도 컨테이너를 관리한다.
 
+## GitHub Issue 체크리스트 관리
+
+작업 완료 후 반드시 연관된 GitHub 이슈의 체크리스트를 확인하고, 정상 수행된 항목은 체크로 변경한다.
+
+- **Acceptance Criteria**: Given-When-Then 기준으로 실제 동작 여부를 확인한 뒤 체크
+- **Tasks**: 코드/파일이 실제로 존재하거나 동작이 확인된 항목만 체크
+- 미완료 항목은 체크하지 않는다
+
+```bash
+# 이슈 내용 확인
+gh issue view [이슈번호] --repo yuhaeni/carrot-settle
+
+# 체크리스트 업데이트
+gh issue edit [이슈번호] --repo yuhaeni/carrot-settle --body "[업데이트된 본문]"
+```
+
 ## Branching & Commit
 
 - 브랜치: `feature/[이슈번호]-[간단-설명-kebab-case]`, 이슈 없는 수정은 `fix/` 또는 `chore/`
