@@ -1,0 +1,39 @@
+name: Feature
+description: 기능 구현 이슈
+labels: ["type/feature"]
+body:
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: 사용자 스토리를 작성해주세요.
+      placeholder: "~로서, ~할 수 있다. 이를 통해 ~"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Given-When-Then 형식으로 인수 조건을 작성해주세요.
+      placeholder: |
+        - [ ] **Given** ... **When** ... **Then** ...
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: 세부 작업 목록을 작성해주세요.
+      placeholder: |
+        - [ ] 세부 작업 1
+        - [ ] 세부 작업 2
+    validations:
+      required: true
+  - type: textarea
+    id: tech-notes
+    attributes:
+      label: 기술 포인트
+      description: 기술적으로 주의할 점이나 면접 연결 포인트를 작성해주세요. (선택)
+      placeholder: "사용 기술, 설계 패턴, 면접 예상 질문 등"
+    validations:
+      required: false
