@@ -63,6 +63,11 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 - **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader` → `ItemProcessor` → `ItemWriter`. chunk 처리 후 `EntityManager.clear()`로 OOM 방지
 - **정산 조회**: QueryDSL 동적 쿼리 + Redis Cache Aside (확정 데이터 TTL 1시간, 진행 중 5분)
 - **복합 인덱스**: `(seller_id, settlement_date, status)`
+- **동시성 제어**: `@Version` 낙관적 락 + `@Lock(PESSIMISTIC_WRITE)` 비관적 락 + Spring Retry (3회 재시도)
+- **비동기 처리**: `@Async` + `CompletableFuture` — `AsyncConfig`(ThreadPoolTaskExecutor)로 스레드 풀 관리
+- **모니터링**: Spring Actuator + Micrometer + Prometheus + Grafana (`compose.yaml`에 포함). 커스텀 메트릭 네이밍: `carrot.settle.*`
+- **부하 테스트**: k6 스크립트로 주요 API TPS/P95 측정. 결과는 `docs/load-test/` 에 기록
+- **N+1 해결**: fetch join 또는 `@BatchSize` — SQL 로그로 전/후 쿼리 수 비교 검증
 
 ### 인프라
 
