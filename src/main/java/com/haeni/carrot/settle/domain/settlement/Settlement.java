@@ -68,7 +68,7 @@ public class Settlement extends BaseEntity {
       BigDecimal netAmount) {
     this.seller = seller;
     this.settlementDate = settlementDate;
-    this.status = SettlementStatus.PENDING;
+    this.status = SettlementStatus.INCOMPLETED;
     this.totalAmount = totalAmount;
     this.pgFee = pgFee;
     this.platformFee = platformFee;
@@ -77,10 +77,6 @@ public class Settlement extends BaseEntity {
 
   public void complete() {
     this.status = SettlementStatus.COMPLETED;
-  }
-
-  public void fail() {
-    this.status = SettlementStatus.FAILED;
   }
 
   public Long getId() {
