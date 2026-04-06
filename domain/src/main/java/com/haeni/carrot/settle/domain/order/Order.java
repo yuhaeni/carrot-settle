@@ -1,18 +1,14 @@
 package com.haeni.carrot.settle.domain.order;
 
 import com.haeni.carrot.settle.domain.common.BaseEntity;
-import com.haeni.carrot.settle.domain.seller.Seller;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -29,10 +25,6 @@ public class Order extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "seller_id", nullable = false)
-  private Seller seller;
-
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private OrderStatus status;
@@ -47,8 +39,7 @@ public class Order extends BaseEntity {
 
   protected Order() {}
 
-  public Order(Seller seller, BigDecimal totalAmount) {
-    this.seller = seller;
+  public Order(BigDecimal totalAmount) {
     this.totalAmount = totalAmount;
     this.status = OrderStatus.PAID;
   }
@@ -80,10 +71,6 @@ public class Order extends BaseEntity {
 
   public Long getId() {
     return id;
-  }
-
-  public Seller getSeller() {
-    return seller;
   }
 
   public OrderStatus getStatus() {

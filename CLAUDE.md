@@ -41,8 +41,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 ```
 
+- **Order ↔ Seller 관계**: `Order`에 `seller_id` 없음. Seller는 `Order → OrderItem → Product → Seller` 체인으로 접근 (PRD 도메인 모델 기준)
 - **수수료 구조**: PG 3% (고정) + 플랫폼 수수료 셀러 등급별 (일반 5% / 우수 3% / VIP 1%)
-- **주문 상태 전이**: `CREATED → PAID → CONFIRMED → SETTLED` / `PAID → REFUNDED`
+- **주문 상태 전이**: `PAID → CONFIRMED → SETTLED` / `PAID → REFUNDED` (주문 생성 시 즉시 PAID)
 - **금액 계산**: 반드시 `BigDecimal`과 `RoundingMode.HALF_UP` 사용
 
 ### 주요 API
