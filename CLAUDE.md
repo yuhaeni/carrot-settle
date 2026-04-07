@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test --tests "com.haeni.carrot.settle.TargetTest.methodName"
 
 # 애플리케이션 실행 (Docker Compose 자동 기동 포함)
-./gradlew bootRun
+./gradlew :api:bootRun
 
 # 컴파일만 확인
 ./gradlew compileJava
