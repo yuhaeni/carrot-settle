@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: carrot.settle
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+  data:
+    redis:
+      timeout: 2000ms
+  batch:
+    jdbc:
+      initialize-schema: always
