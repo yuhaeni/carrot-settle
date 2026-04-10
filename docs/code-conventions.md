@@ -155,6 +155,31 @@ public enum SettlementStatus {
 }
 ```
 
+### name / description 필드 필수 추가
+
+모든 Enum은 `name`(한글 명칭)과 `description`(상태 의미 설명)을 반드시 포함한다.
+다른 개발자가 코드만 보고 각 값의 의미를 즉시 파악할 수 있도록 하기 위함이다.
+
+getter는 Lombok `@Getter`를 사용한다. 수동 getter 작성 금지.
+
+```java
+import lombok.Getter;
+
+@Getter
+public enum OrderStatus {
+    PAID("결제 완료", "결제가 완료된 상태. 주문 생성과 동시에 진입하며 구매 확정 대기 중"),
+    CONFIRMED("구매 확정", "구매자가 수령을 확정한 상태. 정산 대상으로 전환됨");
+
+    private final String name;
+    private final String description;
+
+    OrderStatus(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+}
+```
+
 ---
 
 ## 7. 페이지네이션
