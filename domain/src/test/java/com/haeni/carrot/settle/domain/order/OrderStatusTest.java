@@ -1,6 +1,7 @@
 package com.haeni.carrot.settle.domain.order;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -8,40 +9,47 @@ class OrderStatusTest {
 
   @Test
   void CREATED에서_PAID로_전이_가능() {
-    assertThat(OrderStatus.CREATED.canTransitionTo(OrderStatus.PAID)).isTrue();
+    assertThatCode(() -> OrderStatus.CREATED.validateTransitionTo(OrderStatus.PAID))
+        .doesNotThrowAnyException();
   }
 
   @Test
   void CREATED에서_CONFIRMED로_전이_불가() {
-    assertThat(OrderStatus.CREATED.canTransitionTo(OrderStatus.CONFIRMED)).isFalse();
+    assertThatThrownBy(() -> OrderStatus.CREATED.validateTransitionTo(OrderStatus.CONFIRMED))
+        .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void PAID에서_CONFIRMED로_전이_가능() {
-    assertThat(OrderStatus.PAID.canTransitionTo(OrderStatus.CONFIRMED)).isTrue();
+    assertThatCode(() -> OrderStatus.PAID.validateTransitionTo(OrderStatus.CONFIRMED))
+        .doesNotThrowAnyException();
   }
 
   @Test
   void PAID에서_REFUNDED로_전이_가능() {
-    assertThat(OrderStatus.PAID.canTransitionTo(OrderStatus.REFUNDED)).isTrue();
+    assertThatCode(() -> OrderStatus.PAID.validateTransitionTo(OrderStatus.REFUNDED))
+        .doesNotThrowAnyException();
   }
 
   @Test
   void CONFIRMED에서_SETTLED로_전이_가능() {
-    assertThat(OrderStatus.CONFIRMED.canTransitionTo(OrderStatus.SETTLED)).isTrue();
+    assertThatCode(() -> OrderStatus.CONFIRMED.validateTransitionTo(OrderStatus.SETTLED))
+        .doesNotThrowAnyException();
   }
 
   @Test
   void SETTLED에서_어떤_상태로도_전이_불가() {
     for (OrderStatus next : OrderStatus.values()) {
-      assertThat(OrderStatus.SETTLED.canTransitionTo(next)).isFalse();
+      assertThatThrownBy(() -> OrderStatus.SETTLED.validateTransitionTo(next))
+          .isInstanceOf(IllegalStateException.class);
     }
   }
 
   @Test
   void REFUNDED에서_어떤_상태로도_전이_불가() {
     for (OrderStatus next : OrderStatus.values()) {
-      assertThat(OrderStatus.REFUNDED.canTransitionTo(next)).isFalse();
+      assertThatThrownBy(() -> OrderStatus.REFUNDED.validateTransitionTo(next))
+          .isInstanceOf(IllegalStateException.class);
     }
   }
 }

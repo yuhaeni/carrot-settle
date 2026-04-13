@@ -3,9 +3,12 @@ package com.haeni.carrot.settle.domain.order;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public enum OrderStatus {
   CREATED("주문 생성", "주문이 생성되었으나 아직 결제가 완료되지 않은 상태"),
   PAID("결제 완료", "결제가 완료된 상태. 주문 생성과 동시에 진입하며 구매 확정 대기 중"),
@@ -16,11 +19,6 @@ public enum OrderStatus {
   private final String name;
   private final String description;
 
-  OrderStatus(String name, String description) {
-    this.name = name;
-    this.description = description;
-  }
-
   private static final Map<OrderStatus, Set<OrderStatus>> TRANSITIONS =
       Map.of(
           CREATED, EnumSet.of(PAID),
@@ -29,7 +27,10 @@ public enum OrderStatus {
           SETTLED, EnumSet.noneOf(OrderStatus.class),
           REFUNDED, EnumSet.noneOf(OrderStatus.class));
 
-  public boolean canTransitionTo(OrderStatus next) {
-    return TRANSITIONS.get(this).contains(next);
+  public void validateTransitionTo(OrderStatus next) {
+    if (!TRANSITIONS.get(this).contains(next)) {
+      throw new IllegalStateException(
+          String.format("%s 상태에서 %s 상태로 전이할 수 없습니다.", this.name, next.name));
+    }
   }
 }

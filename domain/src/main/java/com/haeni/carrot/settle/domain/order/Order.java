@@ -49,23 +49,17 @@ public class Order extends BaseEntity {
   }
 
   public void confirm() {
-    if (this.status != OrderStatus.PAID) {
-      throw new IllegalStateException("PAID 상태인 주문만 구매 확정할 수 있습니다.");
-    }
+    this.status.validateTransitionTo(OrderStatus.CONFIRMED);
     this.status = OrderStatus.CONFIRMED;
   }
 
   public void settle() {
-    if (this.status != OrderStatus.CONFIRMED) {
-      throw new IllegalStateException("CONFIRMED 상태인 주문만 정산할 수 있습니다.");
-    }
+    this.status.validateTransitionTo(OrderStatus.SETTLED);
     this.status = OrderStatus.SETTLED;
   }
 
   public void refund() {
-    if (this.status != OrderStatus.PAID) {
-      throw new IllegalStateException("PAID 상태인 주문만 환불할 수 있습니다.");
-    }
+    this.status.validateTransitionTo(OrderStatus.REFUNDED);
     this.status = OrderStatus.REFUNDED;
   }
 
