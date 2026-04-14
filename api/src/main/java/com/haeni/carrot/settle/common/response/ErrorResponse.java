@@ -1,4 +1,6 @@
-package com.haeni.carrot.settle.common;
+package com.haeni.carrot.settle.common.response;
+
+import com.haeni.carrot.settle.common.exception.ErrorCode;
 
 public record ErrorResponse(String code, String message) {
 

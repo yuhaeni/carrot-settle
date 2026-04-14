@@ -1,7 +1,7 @@
 package com.haeni.carrot.settle.order;
 
-import com.haeni.carrot.settle.common.BusinessException;
-import com.haeni.carrot.settle.common.ErrorCode;
+import com.haeni.carrot.settle.common.exception.BusinessException;
+import com.haeni.carrot.settle.common.exception.ErrorCode;
 import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderItem;
 import com.haeni.carrot.settle.domain.product.Product;

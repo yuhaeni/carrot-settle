@@ -1,6 +1,6 @@
 package com.haeni.carrot.settle.order;
 
-import com.haeni.carrot.settle.common.ErrorResponse;
+import com.haeni.carrot.settle.common.response.ErrorResponse;
 import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
