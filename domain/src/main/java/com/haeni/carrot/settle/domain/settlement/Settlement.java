@@ -17,7 +17,11 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(
     name = "settlements",
@@ -57,8 +61,6 @@ public class Settlement extends BaseEntity {
 
   @Version private Long version;
 
-  protected Settlement() {}
-
   public Settlement(
       Seller seller,
       LocalDate settlementDate,
@@ -77,37 +79,5 @@ public class Settlement extends BaseEntity {
 
   public void complete() {
     this.status = SettlementStatus.COMPLETED;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public Seller getSeller() {
-    return seller;
-  }
-
-  public LocalDate getSettlementDate() {
-    return settlementDate;
-  }
-
-  public SettlementStatus getStatus() {
-    return status;
-  }
-
-  public BigDecimal getTotalAmount() {
-    return totalAmount;
-  }
-
-  public BigDecimal getPgFee() {
-    return pgFee;
-  }
-
-  public BigDecimal getPlatformFee() {
-    return platformFee;
-  }
-
-  public BigDecimal getNetAmount() {
-    return netAmount;
   }
 }

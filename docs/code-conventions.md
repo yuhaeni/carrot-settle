@@ -78,9 +78,9 @@ POST   /api/v1/settlements/calculate
 ## 4. 날짜 / 시간 형식
 
 ```
-# 일시 (datetime): ISO 8601 오프셋 포함
-yyyy-MM-dd'T'HH:mm:ss±hh:mm
-예) 2024-01-15T14:30:00+09:00
+# 일시 (datetime): 한국 단일 서비스이므로 타임존 없이 LocalDateTime 사용
+yyyy-MM-dd'T'HH:mm:ss
+예) 2024-01-15T14:30:00
 
 # 날짜 (date)
 yyyy-MM-dd
@@ -91,8 +91,8 @@ yyyy-MM-dd
 
 ```java
 // DTO 필드
-@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
-private OffsetDateTime approvedAt;
+@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+private LocalDateTime createdAt;
 
 @JsonFormat(pattern = "yyyy-MM-dd")
 private LocalDate settlementDate;
@@ -102,8 +102,7 @@ private LocalDate settlementDate;
 # application.yml
 spring:
   jackson:
-    date-format: yyyy-MM-dd'T'HH:mm:ssXXX
-    time-zone: Asia/Seoul
+    date-format: yyyy-MM-dd'T'HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
 ```
@@ -119,6 +118,11 @@ spring:
 ```java
 // 계산 시
 BigDecimal fee = amount.multiply(FEE_RATE).setScale(0, RoundingMode.HALF_UP);
+
+// BigDecimal → Long 변환 시: 반드시 setScale(0, HALF_UP) 후 longValue()
+// longValue() 단독 사용 금지 — 소수점 버림 발생
+amount.setScale(0, RoundingMode.HALF_UP).longValue()  // O
+amount.longValue()                                     // X
 
 // DTO 직렬화 시
 private Long totalAmount;   // JSON: 15000

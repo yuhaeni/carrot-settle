@@ -16,7 +16,11 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(name = "orders")
 public class Order extends BaseEntity {
@@ -32,16 +36,19 @@ public class Order extends BaseEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal totalAmount;
 
+  @Getter(lombok.AccessLevel.NONE)
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderItem> orderItems = new ArrayList<>();
 
   @Version private Long version;
 
-  protected Order() {}
-
   public Order(BigDecimal totalAmount) {
     this.totalAmount = totalAmount;
     this.status = OrderStatus.PAID;
+  }
+
+  public List<OrderItem> getOrderItems() {
+    return Collections.unmodifiableList(orderItems);
   }
 
   public void addOrderItem(OrderItem orderItem) {
@@ -61,21 +68,5 @@ public class Order extends BaseEntity {
   public void refund() {
     this.status.validateTransitionTo(OrderStatus.REFUNDED);
     this.status = OrderStatus.REFUNDED;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public OrderStatus getStatus() {
-    return status;
-  }
-
-  public BigDecimal getTotalAmount() {
-    return totalAmount;
-  }
-
-  public List<OrderItem> getOrderItems() {
-    return Collections.unmodifiableList(orderItems);
   }
 }
