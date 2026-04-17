@@ -12,6 +12,9 @@ import com.haeni.carrot.settle.order.dto.OrderItemRequest;
 import com.haeni.carrot.settle.order.dto.OrderResponse;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,41 +22,43 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class OrderService {
 
   private final OrderRepository orderRepository;
   private final ProductRepository productRepository;
 
+  @Transactional
   public OrderResponse createOrder(CreateOrderRequest request) {
-    List<Product> products =
-        request.items().stream()
-            .map(
-                item ->
-                    productRepository
-                        .findById(item.productId())
-                        .orElseThrow(
-                            () -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, HttpStatus.BAD_REQUEST)))
-            .toList();
+    List<Long> productIds =
+        request.items().stream().map(OrderItemRequest::productId).toList();
 
-    BigDecimal totalAmount =
-        calculateTotalAmount(request.items(), products);
+    Map<Long, Product> productMap =
+        productRepository.findAllById(productIds).stream()
+            .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+    if (productMap.size() != productIds.size()) {
+      throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, HttpStatus.BAD_REQUEST);
+    }
+
+    BigDecimal totalAmount = calculateTotalAmount(request.items(), productMap);
 
     Order order = new Order(totalAmount);
-
-    for (int i = 0; i < request.items().size(); i++) {
-      OrderItemRequest itemRequest = request.items().get(i);
-      Product product = products.get(i);
+    for (OrderItemRequest itemRequest : request.items()) {
+      Product product = productMap.get(itemRequest.productId());
       order.addOrderItem(new OrderItem(order, product, itemRequest.quantity(), product.getPrice()));
     }
 
     return OrderResponse.from(orderRepository.save(order));
   }
 
-  private BigDecimal calculateTotalAmount(List<OrderItemRequest> items, List<Product> products) {
+  private BigDecimal calculateTotalAmount(
+      List<OrderItemRequest> items, Map<Long, Product> productMap) {
     BigDecimal total = BigDecimal.ZERO;
-    for (int i = 0; i < items.size(); i++) {
-      total = total.add(products.get(i).getPrice().multiply(BigDecimal.valueOf(items.get(i).quantity())));
+    for (OrderItemRequest item : items) {
+      total =
+          total.add(
+              productMap.get(item.productId()).getPrice().multiply(BigDecimal.valueOf(item.quantity())));
     }
     return total;
   }

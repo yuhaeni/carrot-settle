@@ -408,6 +408,38 @@ public record PaymentResponse(
 
 ---
 
+## 13. @Transactional 적용 패턴
+
+### 규칙
+
+- 클래스 레벨: `@Transactional(readOnly = true)` — 기본값으로 적용
+- 쓰기 메서드(INSERT/UPDATE/DELETE): 메서드 레벨에 `@Transactional`로 오버라이드
+
+`readOnly = true`는 flush를 생략하고 스냅샷 비교를 건너뛰어 성능 최적화 효과가 있다.
+또한 실수로 쓰기 메서드에 트랜잭션 없이 데이터 변경이 발생하는 것을 방지한다.
+
+### Java 적용
+
+```java
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)  // 클래스 기본값
+public class OrderService {
+
+    // 조회 메서드 — 별도 어노테이션 불필요
+    public OrderResponse getOrder(Long id) { ... }
+
+    // 쓰기 메서드 — 반드시 오버라이드
+    @Transactional
+    public OrderResponse createOrder(CreateOrderRequest request) { ... }
+
+    @Transactional
+    public OrderResponse confirmOrder(Long id) { ... }
+}
+```
+
+---
+
 ## 요약 체크리스트
 
 - [ ] URL 경로: 소문자 케밥-케이스, 복수형, `/api/v1/` 접두사
@@ -421,3 +453,4 @@ public record PaymentResponse(
 - [ ] 에러: `{ code, message }` 형식, code는 UPPER_SNAKE_CASE
 - [ ] 인증 정보: 환경변수로 관리, 코드에 하드코딩 금지
 - [ ] DTO 이름: `{Action}{Resource}Request` / `{Resource}Response`
+- [ ] `@Transactional`: 클래스 레벨 `readOnly = true`, 쓰기 메서드만 `@Transactional` 오버라이드
