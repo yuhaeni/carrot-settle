@@ -1,6 +1,7 @@
 package com.haeni.carrot.settle.order;
 
 import com.haeni.carrot.settle.common.response.ErrorResponse;
+import com.haeni.carrot.settle.common.response.HttpStatusCode;
 import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +30,9 @@ public class OrderController {
   @PostMapping
   @Operation(summary = "주문 생성", description = "새 주문을 생성합니다. 생성 즉시 PAID 상태로 전환됩니다.")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "주문 생성 성공"),
+    @ApiResponse(responseCode = HttpStatusCode.CREATED, description = "주문 생성 성공"),
     @ApiResponse(
-        responseCode = "400",
+        responseCode = HttpStatusCode.BAD_REQUEST,
         description = "잘못된 요청 (존재하지 않는 상품 또는 유효하지 않은 입력)",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   })
