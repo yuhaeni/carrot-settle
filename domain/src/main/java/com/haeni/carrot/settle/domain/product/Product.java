@@ -12,7 +12,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(name = "products")
 public class Product extends BaseEntity {
@@ -34,32 +38,10 @@ public class Product extends BaseEntity {
   @Column(nullable = false)
   private int stock;
 
-  protected Product() {}
-
   public Product(Seller seller, String name, BigDecimal price, int stock) {
     this.seller = seller;
     this.name = name;
     this.price = price;
     this.stock = stock;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public Seller getSeller() {
-    return seller;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public BigDecimal getPrice() {
-    return price;
-  }
-
-  public int getStock() {
-    return stock;
   }
 }

@@ -14,7 +14,11 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(name = "payouts")
 public class Payout {
@@ -37,8 +41,6 @@ public class Payout {
   @Column(updatable = false)
   private LocalDateTime createdAt;
 
-  protected Payout() {}
-
   public Payout(Settlement settlement, BigDecimal amount) {
     this.settlement = settlement;
     this.amount = amount;
@@ -48,25 +50,5 @@ public class Payout {
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public Settlement getSettlement() {
-    return settlement;
-  }
-
-  public PayoutStatus getStatus() {
-    return status;
-  }
-
-  public BigDecimal getAmount() {
-    return amount;
-  }
-
-  public LocalDateTime getCreatedAt() {
-    return createdAt;
   }
 }

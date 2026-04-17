@@ -9,7 +9,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(name = "sellers")
 public class Seller extends BaseEntity {
@@ -28,27 +32,9 @@ public class Seller extends BaseEntity {
   @Column(nullable = false)
   private SellerGrade grade;
 
-  protected Seller() {}
-
   public Seller(String name, String email, SellerGrade grade) {
     this.name = name;
     this.email = email;
     this.grade = grade;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public SellerGrade getGrade() {
-    return grade;
   }
 }

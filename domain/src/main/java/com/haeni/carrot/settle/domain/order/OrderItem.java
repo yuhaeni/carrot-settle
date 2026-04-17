@@ -11,7 +11,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -37,37 +41,11 @@ public class OrderItem {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal subtotal;
 
-  protected OrderItem() {}
-
   public OrderItem(Order order, Product product, int quantity, BigDecimal unitPrice) {
     this.order = order;
     this.product = product;
     this.quantity = quantity;
     this.unitPrice = unitPrice;
     this.subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public Order getOrder() {
-    return order;
-  }
-
-  public Product getProduct() {
-    return product;
-  }
-
-  public int getQuantity() {
-    return quantity;
-  }
-
-  public BigDecimal getUnitPrice() {
-    return unitPrice;
-  }
-
-  public BigDecimal getSubtotal() {
-    return subtotal;
   }
 }
