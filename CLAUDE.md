@@ -68,7 +68,12 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 - **비동기 처리**: `@Async` + `CompletableFuture` — `AsyncConfig`(ThreadPoolTaskExecutor)로 스레드 풀 관리
 - **모니터링**: Spring Actuator + Micrometer + Prometheus + Grafana (`compose.yaml`에 포함). 커스텀 메트릭 네이밍: `carrot.settle.*`
 - **부하 테스트**: k6 스크립트로 주요 API TPS/P95 측정. 결과는 `docs/load-test/` 에 기록
-- **N+1 해결**: fetch join 또는 `@BatchSize` — SQL 로그로 전/후 쿼리 수 비교 검증
+- **N+1 해결**: 시나리오에 따라 방식 구분
+  - 단건 상세 조회: `JOIN FETCH` — 항상 1회 쿼리 보장, 페이지네이션 없고 컬렉션 1개인 경우 적합
+  - 목록 + 페이지네이션: `@BatchSize` (또는 글로벌 `default_batch_fetch_size: 100`) — LIMIT/OFFSET 충돌 없이 IN 절로 처리
+  - 정산 배치(ItemReader chunk): `JOIN FETCH` — chunk 단위 완전 로드 후 `em.clear()` 패턴과 잘 맞음
+  - 컬렉션이 2개 이상인 엔티티: `@BatchSize` — `MultipleBagFetchException` 회피
+  - 검증: Hibernate Statistics(`getPrepareStatementCount()`)로 쿼리 수 측정. JOIN FETCH는 `isEqualTo(1)`, @BatchSize는 `isLessThanOrEqualTo(3)` 단언 사용
 
 ### 모듈 의존성 설계
 
