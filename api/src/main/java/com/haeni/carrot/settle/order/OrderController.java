@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,5 +40,22 @@ public class OrderController {
   })
   public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
+  }
+
+  @PatchMapping("/{id}/confirm")
+  @Operation(summary = "구매 확정", description = "PAID 상태의 주문을 CONFIRMED로 전환하고 Settlement를 생성합니다.")
+  @ApiResponses({
+    @ApiResponse(responseCode = HttpStatusCode.OK, description = "구매 확정 성공"),
+    @ApiResponse(
+        responseCode = HttpStatusCode.BAD_REQUEST,
+        description = "잘못된 주문 상태 (PAID가 아닌 경우)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(
+        responseCode = HttpStatusCode.NOT_FOUND,
+        description = "존재하지 않는 주문",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
+  public ResponseEntity<OrderResponse> confirmOrder(@PathVariable Long id) {
+    return ResponseEntity.ok(orderService.confirmOrder(id));
   }
 }
