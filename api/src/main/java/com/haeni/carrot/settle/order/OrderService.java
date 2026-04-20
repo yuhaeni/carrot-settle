@@ -4,7 +4,6 @@ import com.haeni.carrot.settle.common.exception.BusinessException;
 import com.haeni.carrot.settle.common.exception.ErrorCode;
 import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderItem;
-import com.haeni.carrot.settle.domain.order.OrderStatus;
 import com.haeni.carrot.settle.domain.product.Product;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import com.haeni.carrot.settle.domain.settlement.Settlement;
@@ -13,7 +12,7 @@ import com.haeni.carrot.settle.infrastructure.product.ProductRepository;
 import com.haeni.carrot.settle.infrastructure.settlement.SettlementRepository;
 import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderItemRequest;
-import com.haeni.carrot.settle.order.dto.OrderResponse;
+import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -40,7 +39,7 @@ public class OrderService {
   private final SettlementRepository settlementRepository;
 
   @Transactional
-  public OrderResponse createOrder(CreateOrderRequest request) {
+  public OrderResponseDto createOrder(CreateOrderRequest request) {
     List<Long> productIds =
         request.items().stream().map(OrderItemRequest::productId).toList();
 
@@ -60,20 +59,16 @@ public class OrderService {
       order.addOrderItem(new OrderItem(order, product, itemRequest.quantity(), product.getPrice()));
     }
 
-    return OrderResponse.from(orderRepository.save(order));
+    return OrderResponseDto.from(orderRepository.save(order));
   }
 
   @Transactional
-  public OrderResponse confirmOrder(Long orderId) {
+  public OrderResponseDto confirmOrder(Long orderId) {
     Order order =
         orderRepository
             .findByIdWithItemsAndSeller(orderId)
             .orElseThrow(
                 () -> new BusinessException(ErrorCode.ORDER_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-    if (order.getStatus() == OrderStatus.CONFIRMED) {
-      return OrderResponse.from(order);
-    }
 
     try {
       order.confirm();
@@ -83,7 +78,7 @@ public class OrderService {
 
     settlementRepository.saveAll(buildSettlements(order));
 
-    return OrderResponse.from(order);
+    return OrderResponseDto.from(order);
   }
 
   private List<Settlement> buildSettlements(Order order) {

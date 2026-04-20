@@ -39,7 +39,7 @@ public class OrderController {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   })
   public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-    return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
+    return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(orderService.createOrder(request)));
   }
 
   @PatchMapping("/{id}/confirm")
@@ -56,6 +56,6 @@ public class OrderController {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   })
   public ResponseEntity<OrderResponse> confirmOrder(@PathVariable Long id) {
-    return ResponseEntity.ok(orderService.confirmOrder(id));
+    return ResponseEntity.ok(OrderResponse.from(orderService.confirmOrder(id)));
   }
 }

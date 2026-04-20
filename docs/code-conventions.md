@@ -338,26 +338,46 @@ public class TossPaymentsClient {
 | 용도 | 이름 패턴 | 예시 |
 |------|-----------|------|
 | API 요청 | `{Action}{Resource}Request` | `CreateOrderRequest`, `ConfirmOrderRequest` |
-| API 응답 | `{Resource}Response` | `OrderResponse`, `SettlementResponse` |
+| Controller 응답 | `{Resource}Response` | `OrderResponse`, `SettlementResponse` |
+| Service 응답 | `{Resource}ResponseDto` | `OrderResponseDto`, `SettlementResponseDto` |
 | 목록 응답 | `{Resource}ListResponse` | `SettlementListResponse` |
 | 내부 커맨드 | `{Action}{Resource}Command` | `CalculateSettlementCommand` |
 | 내부 결과 | `{Resource}Result` | `FeeCalculationResult` |
 
-```java
-// 요청
-public record CreateOrderRequest(
-    Long sellerId,
-    List<OrderItemRequest> items
-) {}
+### 레이어별 응답 DTO 분리 규칙
 
-// 응답
-public record OrderResponse(
+- **Service 레이어**는 `*ResponseDto`를 반환한다. 도메인 객체를 직접 반환하지 않는다.
+- **Controller 레이어**는 Service로부터 받은 `*ResponseDto`를 `*Response`로 변환하여 클라이언트에 반환한다.
+- `*Response`는 `from(*ResponseDto)` 팩토리 메서드로 변환한다.
+
+```java
+// Service 반환 DTO
+public record OrderResponseDto(
     Long id,
-    String orderId,        // 외부 주문번호
     OrderStatus status,
     Long totalAmount,
-    OffsetDateTime createdAt
-) {}
+    List<OrderItemResponseDto> items,
+    LocalDateTime createdAt) {
+
+  public static OrderResponseDto from(Order order) { ... }
+}
+
+// Controller API 응답 DTO
+public record OrderResponse(
+    Long id,
+    OrderStatus status,
+    Long totalAmount,
+    List<OrderItemResponse> items,
+    LocalDateTime createdAt) {
+
+  public static OrderResponse from(OrderResponseDto dto) { ... }
+}
+
+// Controller에서의 변환 — 한 줄 return
+@PostMapping
+public ResponseEntity<OrderResponse> createOrder(...) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(orderService.createOrder(request)));
+}
 ```
 
 ---
@@ -452,5 +472,5 @@ public class OrderService {
 - [ ] 페이지네이션: 고정 범위 → 오프셋, 대용량 → 커서
 - [ ] 에러: `{ code, message }` 형식, code는 UPPER_SNAKE_CASE
 - [ ] 인증 정보: 환경변수로 관리, 코드에 하드코딩 금지
-- [ ] DTO 이름: `{Action}{Resource}Request` / `{Resource}Response`
+- [ ] DTO 이름: `{Action}{Resource}Request` / Controller 응답 `{Resource}Response` / Service 응답 `{Resource}ResponseDto`
 - [ ] `@Transactional`: 클래스 레벨 `readOnly = true`, 쓰기 메서드만 `@Transactional` 오버라이드

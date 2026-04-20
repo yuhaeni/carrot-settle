@@ -15,7 +15,7 @@ import com.haeni.carrot.settle.infrastructure.order.OrderRepository;
 import com.haeni.carrot.settle.infrastructure.product.ProductRepository;
 import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderItemRequest;
-import com.haeni.carrot.settle.order.dto.OrderResponse;
+import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,7 @@ class OrderServiceTest {
     given(orderRepository.save(any(Order.class))).willAnswer(inv -> inv.getArgument(0));
 
     // when
-    OrderResponse response = orderService.createOrder(request);
+    OrderResponseDto response = orderService.createOrder(request);
 
     // then
     assertThat(response.status()).isEqualTo(OrderStatus.PAID);
@@ -76,7 +76,7 @@ class OrderServiceTest {
     given(orderRepository.save(any(Order.class))).willAnswer(inv -> inv.getArgument(0));
 
     // when
-    OrderResponse response = orderService.createOrder(request);
+    OrderResponseDto response = orderService.createOrder(request);
 
     // then — p1: 10000*2=20000, p2: 5000*3=15000, total=35000
     assertThat(response.totalAmount()).isEqualTo(35000L);
