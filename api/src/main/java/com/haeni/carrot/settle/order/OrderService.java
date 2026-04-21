@@ -4,6 +4,7 @@ import com.haeni.carrot.settle.common.exception.BusinessException;
 import com.haeni.carrot.settle.common.exception.ErrorCode;
 import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderItem;
+import com.haeni.carrot.settle.domain.order.OrderStatus;
 import com.haeni.carrot.settle.domain.product.Product;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import com.haeni.carrot.settle.domain.settlement.Settlement;
@@ -16,6 +17,7 @@ import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +62,27 @@ public class OrderService {
     }
 
     return OrderResponseDto.from(orderRepository.save(order));
+  }
+
+  public List<Long> findPaidOrderIdsOlderThan(LocalDateTime threshold) {
+    return orderRepository.findIdsByStatusAndCreatedAtBefore(OrderStatus.PAID, threshold);
+  }
+
+  @Transactional
+  public OrderResponseDto refundOrder(Long orderId) {
+    Order order =
+        orderRepository
+            .findByIdWithItems(orderId)
+            .orElseThrow(
+                () -> new BusinessException(ErrorCode.ORDER_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+    try {
+      order.refund();
+    } catch (IllegalStateException e) {
+      throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, HttpStatus.BAD_REQUEST);
+    }
+
+    return OrderResponseDto.from(order);
   }
 
   @Transactional

@@ -52,10 +52,11 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 |--------|----------|------|
 | `POST` | `/api/v1/orders` | 주문 생성 (생성 즉시 PAID 상태) |
 | `PATCH` | `/api/v1/orders/{id}/confirm` | 수동 구매 확정 |
+| `PATCH` | `/api/v1/orders/{id}/refund` | 환불 처리 (PAID → REFUNDED, 정산 대상 제외) |
 | `GET` | `/api/v1/settlements` | 정산 내역 조회 (sellerId, 기간, status 필터 + 페이징) |
 | `POST` | `/api/v1/settlements/calculate` | 정산 배치 수동 트리거 |
 
-구매 확정은 매일 새벽 2시 `@Scheduled` 자동 실행도 병행한다.
+구매 확정은 매일 새벽 2시 `@Scheduled` 자동 실행도 병행한다. 자동 확정 스케줄러는 `OrderScheduler` 빈으로 분리 — `orderService.confirmOrder(id)` 호출 시 `@Transactional` 프록시 정상 동작 보장 (self-invocation 회피).
 
 ### 기술 선택 포인트
 

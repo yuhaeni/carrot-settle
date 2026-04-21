@@ -22,6 +22,7 @@ import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderItemRequest;
 import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -222,5 +223,72 @@ class OrderServiceTest {
     // when & then — CONFIRMED → CONFIRMED 전이는 불가
     assertThatThrownBy(() -> orderService.confirmOrder(1L))
         .isInstanceOf(BusinessException.class);
+  }
+
+  // ===================== refundOrder =====================
+
+  @Test
+  @DisplayName("PAID 상태 주문 환불 시 REFUNDED 상태로 변경된다")
+  void refundOrder_성공() {
+    // given
+    Seller seller = new Seller("셀러A", "seller@test.com", SellerGrade.STANDARD);
+    Product product = new Product(seller, "상품A", BigDecimal.valueOf(10000), 100);
+
+    Order order = new Order(BigDecimal.valueOf(10000));
+    order.addOrderItem(new OrderItem(order, product, 1, BigDecimal.valueOf(10000)));
+
+    given(orderRepository.findByIdWithItems(1L)).willReturn(Optional.of(order));
+
+    // when
+    OrderResponseDto response = orderService.refundOrder(1L);
+
+    // then
+    assertThat(response.status()).isEqualTo(OrderStatus.REFUNDED);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 주문 환불 시 BusinessException이 발생한다")
+  void refundOrder_존재하지않는주문_예외() {
+    // given
+    given(orderRepository.findByIdWithItems(999L)).willReturn(Optional.empty());
+
+    // when & then
+    assertThatThrownBy(() -> orderService.refundOrder(999L))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  @Test
+  @DisplayName("CONFIRMED 상태 주문 환불 시 BusinessException이 발생한다")
+  void refundOrder_확정된주문_예외() {
+    // given
+    Seller seller = new Seller("셀러A", "seller@test.com", SellerGrade.STANDARD);
+    Product product = new Product(seller, "상품A", BigDecimal.valueOf(10000), 100);
+
+    Order order = new Order(BigDecimal.valueOf(10000));
+    order.addOrderItem(new OrderItem(order, product, 1, BigDecimal.valueOf(10000)));
+    order.confirm(); // PAID → CONFIRMED
+
+    given(orderRepository.findByIdWithItems(1L)).willReturn(Optional.of(order));
+
+    // when & then — CONFIRMED → REFUNDED 전이는 불가
+    assertThatThrownBy(() -> orderService.refundOrder(1L))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  // ===================== findPaidOrderIdsOlderThan =====================
+
+  @Test
+  @DisplayName("7일 경과 PAID 주문 ID 목록을 반환한다")
+  void findPaidOrderIdsOlderThan_성공() {
+    // given
+    LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+    given(orderRepository.findIdsByStatusAndCreatedAtBefore(OrderStatus.PAID, threshold))
+        .willReturn(List.of(1L, 2L, 3L));
+
+    // when
+    List<Long> result = orderService.findPaidOrderIdsOlderThan(threshold);
+
+    // then
+    assertThat(result).containsExactly(1L, 2L, 3L);
   }
 }
