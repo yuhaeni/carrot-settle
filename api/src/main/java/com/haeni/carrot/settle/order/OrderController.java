@@ -58,4 +58,21 @@ public class OrderController {
   public ResponseEntity<OrderResponse> confirmOrder(@PathVariable Long id) {
     return ResponseEntity.ok(OrderResponse.from(orderService.confirmOrder(id)));
   }
+
+  @PatchMapping("/{id}/refund")
+  @Operation(summary = "환불 처리", description = "PAID 상태의 주문을 REFUNDED로 전환합니다. 정산 대상에서 제외됩니다.")
+  @ApiResponses({
+    @ApiResponse(responseCode = HttpStatusCode.OK, description = "환불 처리 성공"),
+    @ApiResponse(
+        responseCode = HttpStatusCode.BAD_REQUEST,
+        description = "잘못된 주문 상태 (PAID가 아닌 경우)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(
+        responseCode = HttpStatusCode.NOT_FOUND,
+        description = "존재하지 않는 주문",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
+  public ResponseEntity<OrderResponse> refundOrder(@PathVariable Long id) {
+    return ResponseEntity.ok(OrderResponse.from(orderService.refundOrder(id)));
+  }
 }
