@@ -14,8 +14,8 @@ import com.haeni.carrot.settle.common.exception.ErrorCode;
 import com.haeni.carrot.settle.domain.order.OrderStatus;
 import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderItemRequest;
-import com.haeni.carrot.settle.order.dto.OrderItemResponse;
-import com.haeni.carrot.settle.order.dto.OrderResponse;
+import com.haeni.carrot.settle.order.dto.OrderItemResponseDto;
+import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,14 +50,14 @@ class OrderControllerTest {
   @DisplayName("유효한 요청으로 주문 생성 시 201과 주문 정보를 반환한다")
   void createOrder_201() throws Exception {
     // given
-    OrderResponse mockResponse =
-        new OrderResponse(
+    OrderResponseDto mockDto =
+        new OrderResponseDto(
             1L,
             OrderStatus.PAID,
             20000L,
-            List.of(new OrderItemResponse(1L, 2, 10000L, 20000L)),
+            List.of(new OrderItemResponseDto(1L, 2, 10000L, 20000L)),
             LocalDateTime.now());
-    given(orderService.createOrder(any())).willReturn(mockResponse);
+    given(orderService.createOrder(any())).willReturn(mockDto);
 
     CreateOrderRequest request = new CreateOrderRequest(List.of(new OrderItemRequest(1L, 2)));
 

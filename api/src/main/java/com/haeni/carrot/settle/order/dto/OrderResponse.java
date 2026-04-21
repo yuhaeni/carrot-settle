@@ -1,8 +1,6 @@
 package com.haeni.carrot.settle.order.dto;
 
-import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderStatus;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,12 +11,12 @@ public record OrderResponse(
     List<OrderItemResponse> items,
     LocalDateTime createdAt) {
 
-  public static OrderResponse from(Order order) {
+  public static OrderResponse from(OrderResponseDto dto) {
     return new OrderResponse(
-        order.getId(),
-        order.getStatus(),
-        order.getTotalAmount().setScale(0, RoundingMode.HALF_UP).longValue(),
-        order.getOrderItems().stream().map(OrderItemResponse::from).toList(),
-        order.getCreatedAt());
+        dto.id(),
+        dto.status(),
+        dto.totalAmount(),
+        dto.items().stream().map(OrderItemResponse::from).toList(),
+        dto.createdAt());
   }
 }
