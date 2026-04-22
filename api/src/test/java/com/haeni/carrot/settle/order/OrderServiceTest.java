@@ -15,6 +15,7 @@ import com.haeni.carrot.settle.domain.product.Product;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import com.haeni.carrot.settle.domain.seller.SellerGrade;
 import com.haeni.carrot.settle.domain.settlement.Settlement;
+import com.haeni.carrot.settle.fee.FeeCalculationService;
 import com.haeni.carrot.settle.infrastructure.order.OrderRepository;
 import com.haeni.carrot.settle.infrastructure.product.ProductRepository;
 import com.haeni.carrot.settle.infrastructure.settlement.SettlementRepository;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -40,6 +42,7 @@ class OrderServiceTest {
   @Mock private OrderRepository orderRepository;
   @Mock private ProductRepository productRepository;
   @Mock private SettlementRepository settlementRepository;
+  @Spy private FeeCalculationService feeCalculationService = new FeeCalculationService();
   @InjectMocks private OrderService orderService;
 
   @Test
@@ -152,9 +155,10 @@ class OrderServiceTest {
     Settlement settlement = settlements.get(0);
     assertThat(settlement.getSeller()).isEqualTo(seller);
     assertThat(settlement.getTotalAmount()).isEqualByComparingTo("10000");
-    assertThat(settlement.getPgFee()).isEqualByComparingTo("300.00");       // 10000 * 3%
-    assertThat(settlement.getPlatformFee()).isEqualByComparingTo("500.00"); // 10000 * 5% (STANDARD)
-    assertThat(settlement.getNetAmount()).isEqualByComparingTo("9200.00");  // 10000 - 300 - 500
+    assertThat(settlement.getFeeDetail().getPgFee()).isEqualByComparingTo("300");       // 10000 * 3%
+    assertThat(settlement.getFeeDetail().getPlatformFee()).isEqualByComparingTo("500"); // 10000 * 5% (STANDARD)
+    assertThat(settlement.getFeeDetail().getTotalFee()).isEqualByComparingTo("800");    // 300 + 500
+    assertThat(settlement.getNetAmount()).isEqualByComparingTo("9200");                 // 10000 - 800
   }
 
   @Test
@@ -185,15 +189,15 @@ class OrderServiceTest {
 
     Settlement settlementA = settlements.get(0);
     assertThat(settlementA.getSeller()).isEqualTo(sellerA);
-    assertThat(settlementA.getPgFee()).isEqualByComparingTo("300.00");       // 10000 * 3%
-    assertThat(settlementA.getPlatformFee()).isEqualByComparingTo("500.00"); // 10000 * 5%
-    assertThat(settlementA.getNetAmount()).isEqualByComparingTo("9200.00");
+    assertThat(settlementA.getFeeDetail().getPgFee()).isEqualByComparingTo("300");       // 10000 * 3%
+    assertThat(settlementA.getFeeDetail().getPlatformFee()).isEqualByComparingTo("500"); // 10000 * 5%
+    assertThat(settlementA.getNetAmount()).isEqualByComparingTo("9200");
 
     Settlement settlementB = settlements.get(1);
     assertThat(settlementB.getSeller()).isEqualTo(sellerB);
-    assertThat(settlementB.getPgFee()).isEqualByComparingTo("600.00");       // 20000 * 3%
-    assertThat(settlementB.getPlatformFee()).isEqualByComparingTo("200.00"); // 20000 * 1%
-    assertThat(settlementB.getNetAmount()).isEqualByComparingTo("19200.00");
+    assertThat(settlementB.getFeeDetail().getPgFee()).isEqualByComparingTo("600");       // 20000 * 3%
+    assertThat(settlementB.getFeeDetail().getPlatformFee()).isEqualByComparingTo("200"); // 20000 * 1%
+    assertThat(settlementB.getNetAmount()).isEqualByComparingTo("19200");
   }
 
   @Test

@@ -2,12 +2,14 @@ package com.haeni.carrot.settle.order;
 
 import com.haeni.carrot.settle.common.exception.BusinessException;
 import com.haeni.carrot.settle.common.exception.ErrorCode;
+import com.haeni.carrot.settle.domain.fee.FeeDetail;
 import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderItem;
 import com.haeni.carrot.settle.domain.order.OrderStatus;
 import com.haeni.carrot.settle.domain.product.Product;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import com.haeni.carrot.settle.domain.settlement.Settlement;
+import com.haeni.carrot.settle.fee.FeeCalculationService;
 import com.haeni.carrot.settle.infrastructure.order.OrderRepository;
 import com.haeni.carrot.settle.infrastructure.product.ProductRepository;
 import com.haeni.carrot.settle.infrastructure.settlement.SettlementRepository;
@@ -15,7 +17,6 @@ import com.haeni.carrot.settle.order.dto.CreateOrderRequest;
 import com.haeni.carrot.settle.order.dto.OrderItemRequest;
 import com.haeni.carrot.settle.order.dto.OrderResponseDto;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,11 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class OrderService {
 
-  private static final BigDecimal PG_FEE_RATE = new BigDecimal("0.03");
-
   private final OrderRepository orderRepository;
   private final ProductRepository productRepository;
   private final SettlementRepository settlementRepository;
+  private final FeeCalculationService feeCalculationService;
 
   @Transactional
   public OrderResponseDto createOrder(CreateOrderRequest request) {
@@ -116,13 +116,9 @@ public class OrderService {
     for (Map.Entry<Seller, BigDecimal> entry : amountBySeller.entrySet()) {
       Seller seller = entry.getKey();
       BigDecimal totalAmount = entry.getValue();
-      BigDecimal pgFee = totalAmount.multiply(PG_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
-      BigDecimal platformFee =
-          totalAmount
-              .multiply(seller.getGrade().getPlatformFeeRate())
-              .setScale(2, RoundingMode.HALF_UP);
-      BigDecimal netAmount = totalAmount.subtract(pgFee).subtract(platformFee);
-      settlements.add(new Settlement(seller, today, totalAmount, pgFee, platformFee, netAmount));
+      FeeDetail feeDetail = feeCalculationService.calculate(totalAmount, seller.getGrade());
+      BigDecimal netAmount = totalAmount.subtract(feeDetail.getTotalFee());
+      settlements.add(new Settlement(seller, today, totalAmount, feeDetail, netAmount));
     }
     return settlements;
   }
