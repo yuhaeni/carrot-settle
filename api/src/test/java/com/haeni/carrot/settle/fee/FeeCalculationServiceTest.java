@@ -3,6 +3,8 @@ package com.haeni.carrot.settle.fee;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.haeni.carrot.settle.domain.fee.FeeDetail;
+import com.haeni.carrot.settle.domain.fee.PgFeeCalculator;
+import com.haeni.carrot.settle.domain.fee.PlatformFeeCalculator;
 import com.haeni.carrot.settle.domain.seller.SellerGrade;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +12,8 @@ import org.junit.jupiter.api.Test;
 
 class FeeCalculationServiceTest {
 
-  private final FeeCalculationService service = new FeeCalculationService();
+  private final FeeCalculationService service =
+      new FeeCalculationService(new PgFeeCalculator(), new PlatformFeeCalculator());
 
   @Test
   @DisplayName("STANDARD 등급 10000원: PG 300, 플랫폼 500, 총 800")
@@ -48,7 +51,6 @@ class FeeCalculationServiceTest {
     FeeDetail fee = service.calculate(new BigDecimal("999"), SellerGrade.STANDARD);
 
     // 999 * 0.03 = 29.97 → 30, 999 * 0.05 = 49.95 → 50, total = 80
-    assertThat(fee.getTotalFee())
-        .isEqualByComparingTo(fee.getPgFee().add(fee.getPlatformFee()));
+    assertThat(fee.getTotalFee()).isEqualByComparingTo(fee.getPgFee().add(fee.getPlatformFee()));
   }
 }

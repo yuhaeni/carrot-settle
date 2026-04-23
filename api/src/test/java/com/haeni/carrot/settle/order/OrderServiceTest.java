@@ -8,6 +8,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.haeni.carrot.settle.common.exception.BusinessException;
+import com.haeni.carrot.settle.domain.fee.PgFeeCalculator;
+import com.haeni.carrot.settle.domain.fee.PlatformFeeCalculator;
 import com.haeni.carrot.settle.domain.order.Order;
 import com.haeni.carrot.settle.domain.order.OrderItem;
 import com.haeni.carrot.settle.domain.order.OrderStatus;
@@ -42,7 +44,11 @@ class OrderServiceTest {
   @Mock private OrderRepository orderRepository;
   @Mock private ProductRepository productRepository;
   @Mock private SettlementRepository settlementRepository;
-  @Spy private FeeCalculationService feeCalculationService = new FeeCalculationService();
+
+  @Spy
+  private FeeCalculationService feeCalculationService =
+      new FeeCalculationService(new PgFeeCalculator(), new PlatformFeeCalculator());
+
   @InjectMocks private OrderService orderService;
 
   @Test
