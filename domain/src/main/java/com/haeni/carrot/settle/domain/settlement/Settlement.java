@@ -1,8 +1,10 @@
 package com.haeni.carrot.settle.domain.settlement;
 
 import com.haeni.carrot.settle.domain.common.BaseEntity;
+import com.haeni.carrot.settle.domain.fee.FeeDetail;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -50,11 +52,7 @@ public class Settlement extends BaseEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal totalAmount;
 
-  @Column(nullable = false, precision = 19, scale = 2)
-  private BigDecimal pgFee;
-
-  @Column(nullable = false, precision = 19, scale = 2)
-  private BigDecimal platformFee;
+  @Embedded private FeeDetail feeDetail;
 
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal netAmount;
@@ -65,15 +63,13 @@ public class Settlement extends BaseEntity {
       Seller seller,
       LocalDate settlementDate,
       BigDecimal totalAmount,
-      BigDecimal pgFee,
-      BigDecimal platformFee,
+      FeeDetail feeDetail,
       BigDecimal netAmount) {
     this.seller = seller;
     this.settlementDate = settlementDate;
     this.status = SettlementStatus.INCOMPLETED;
     this.totalAmount = totalAmount;
-    this.pgFee = pgFee;
-    this.platformFee = platformFee;
+    this.feeDetail = feeDetail;
     this.netAmount = netAmount;
   }
 

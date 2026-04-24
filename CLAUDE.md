@@ -60,7 +60,7 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 
 ### 기술 선택 포인트
 
-- **수수료 계산**: Strategy 패턴 (`FeeCalculationStrategy` 인터페이스 → `PgFeeStrategy`, `PlatformFeeStrategy`)
+- **수수료 계산**: `FeeCalculationService.calculate(amount, grade)` 단일 진입점. 각 수수료는 전용 Calculator(`PgFeeCalculator`, `PlatformFeeCalculator`)로 분리되어 `domain/fee`에 위치, api 모듈의 `FeeCalculationConfig`에서 Bean 등록
 - **수수료 VO**: `@Embeddable FeeDetail` (PG 수수료, 플랫폼 수수료, 총 수수료)
 - **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader` → `ItemProcessor` → `ItemWriter`. chunk 처리 후 `EntityManager.clear()`로 OOM 방지
 - **정산 조회**: QueryDSL 동적 쿼리 + Redis Cache Aside (확정 데이터 TTL 1시간, 진행 중 5분)
