@@ -19,11 +19,9 @@ public class FeeCalculationService {
     this.platformFeeCalculator = platformFeeCalculator;
   }
 
-  public FeeCalculationBuilder builder(BigDecimal totalAmount) {
-    return new FeeCalculationBuilder(totalAmount, pgFeeCalculator, platformFeeCalculator);
-  }
-
   public FeeDetail calculate(BigDecimal totalAmount, SellerGrade grade) {
-    return builder(totalAmount).withPgFee().withPlatformFee(grade).build();
+    BigDecimal pgFee = pgFeeCalculator.calculate(totalAmount);
+    BigDecimal platformFee = platformFeeCalculator.calculate(totalAmount, grade);
+    return new FeeDetail(pgFee, platformFee);
   }
 }
