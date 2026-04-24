@@ -54,7 +54,7 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 | `PATCH` | `/api/v1/orders/{id}/confirm` | 수동 구매 확정 |
 | `PATCH` | `/api/v1/orders/{id}/refund` | 환불 처리 (PAID → REFUNDED, 정산 대상 제외) |
 | `GET` | `/api/v1/settlements` | 정산 내역 조회 (sellerId, 기간, status 필터 + 페이징) |
-| `POST` | `/api/v1/settlements/calculate` | 정산 배치 수동 트리거 |
+| `POST` | `/api/v1/settlements/calculate` | 정산 배치 수동 트리거 (body: `{ "targetDate": "yyyy-MM-dd" }` — 해당일 자정 이전 INCOMPLETED만 대상) |
 
 구매 확정은 매일 새벽 2시 `@Scheduled` 자동 실행도 병행한다. 자동 확정 스케줄러는 `OrderScheduler` 빈으로 분리 — `orderService.confirmOrder(id)` 호출 시 `@Transactional` 프록시 정상 동작 보장 (self-invocation 회피).
 
@@ -62,7 +62,7 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 
 - **수수료 계산**: `FeeCalculationService.calculate(amount, grade)` 단일 진입점. 각 수수료는 전용 Calculator(`PgFeeCalculator`, `PlatformFeeCalculator`)로 분리되어 `domain/fee`에 위치, api 모듈의 `FeeCalculationConfig`에서 Bean 등록
 - **수수료 VO**: `@Embeddable FeeDetail` (PG 수수료, 플랫폼 수수료, 총 수수료)
-- **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader` → `ItemProcessor` → `ItemWriter`. chunk 처리 후 `EntityManager.clear()`로 OOM 방지
+- **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader`(INCOMPLETED + settlementDate < targetDate) → `SettlementItemProcessor`(COMPLETED 전이) → Writer(merge+flush+clear). `JobParameter`로 `targetDate` 수신, chunk 처리 후 `EntityManager.clear()`로 OOM 방지. `confirmOrder` 시점에 INCOMPLETED 레코드를 미리 생성 → 배치는 상태 전이만 담당 (스냅샷 방식으로 배치/환불 충돌 회피). Spring Batch 6.0.x 패키지 구조(`org.springframework.batch.infrastructure.item.*`) 사용
 - **정산 조회**: QueryDSL 동적 쿼리 + Redis Cache Aside (확정 데이터 TTL 1시간, 진행 중 5분)
 - **복합 인덱스**: `(seller_id, settlement_date, status)`
 - **동시성 제어**: `@Version` 낙관적 락 + `@Lock(PESSIMISTIC_WRITE)` 비관적 락 + Spring Retry (3회 재시도)
