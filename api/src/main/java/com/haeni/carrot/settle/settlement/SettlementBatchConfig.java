@@ -41,7 +41,8 @@ public class SettlementBatchConfig {
       PlatformTransactionManager transactionManager,
       JpaPagingItemReader<Settlement> settlementReader,
       SettlementItemProcessor settlementItemProcessor,
-      ItemWriter<Settlement> settlementWriter) {
+      ItemWriter<Settlement> settlementWriter,
+      SettlementSkipListener settlementSkipListener) {
     return new StepBuilder(STEP_NAME, jobRepository)
         .<Settlement, Settlement>chunk(CHUNK_SIZE)
         .transactionManager(transactionManager)
@@ -51,6 +52,7 @@ public class SettlementBatchConfig {
         .faultTolerant()
         .skip(IllegalStateException.class)
         .skipLimit(SKIP_LIMIT) // TODO skipLimit 100이 적절한지만 한 번 확인
+        .listener(settlementSkipListener)
         .build();
   }
 

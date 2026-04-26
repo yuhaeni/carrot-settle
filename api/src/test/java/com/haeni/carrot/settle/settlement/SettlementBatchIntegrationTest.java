@@ -6,8 +6,10 @@ import com.haeni.carrot.settle.TestcontainersConfiguration;
 import com.haeni.carrot.settle.domain.fee.FeeDetail;
 import com.haeni.carrot.settle.domain.seller.Seller;
 import com.haeni.carrot.settle.domain.settlement.Settlement;
+import com.haeni.carrot.settle.domain.settlement.SettlementSkipLog;
 import com.haeni.carrot.settle.domain.settlement.SettlementStatus;
 import com.haeni.carrot.settle.infrastructure.settlement.SettlementRepository;
+import com.haeni.carrot.settle.infrastructure.settlement.SettlementSkipLogRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
@@ -49,6 +51,7 @@ class SettlementBatchIntegrationTest {
 
   @Autowired private JobOperatorTestUtils jobOperatorTestUtils;
   @Autowired private SettlementRepository settlementRepository;
+  @Autowired private SettlementSkipLogRepository skipLogRepository;
 
   @PersistenceContext private EntityManager em;
 
