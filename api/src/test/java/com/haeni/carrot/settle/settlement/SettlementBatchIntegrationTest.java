@@ -19,21 +19,35 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.test.JobLauncherTestUtils;
-import org.springframework.batch.test.context.SpringBatchTest;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.test.JobOperatorTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 @SpringBootTest
-@SpringBatchTest
 @Import(TestcontainersConfiguration.class)
 class SettlementBatchIntegrationTest {
 
-  @Autowired private JobLauncherTestUtils jobLauncherTestUtils;
+  @TestConfiguration
+  static class BatchTestConfig {
+    @Bean
+    JobOperatorTestUtils jobOperatorTestUtils(
+        JobOperator jobOperator, JobRepository jobRepository, Job settlementJob) {
+      JobOperatorTestUtils utils = new JobOperatorTestUtils(jobOperator, jobRepository);
+      utils.setJob(settlementJob);
+      return utils;
+    }
+  }
+
+  @Autowired private JobOperatorTestUtils jobOperatorTestUtils;
   @Autowired private SettlementRepository settlementRepository;
 
   @PersistenceContext private EntityManager em;
@@ -68,7 +82,7 @@ class SettlementBatchIntegrationTest {
             newSettlement(vipSeller, past)));
 
     // when
-    JobExecution execution = jobLauncherTestUtils.launchJob(paramsFor(target));
+    JobExecution execution = jobOperatorTestUtils.startJob(paramsFor(target));
 
     // then
     assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
@@ -92,7 +106,7 @@ class SettlementBatchIntegrationTest {
     settlementRepository.saveAll(List.of(past, onTarget, future));
 
     // when
-    jobLauncherTestUtils.launchJob(paramsFor(target));
+    jobOperatorTestUtils.startJob(paramsFor(target));
 
     // then
     Map<LocalDate, SettlementStatus> byDate =
@@ -113,13 +127,13 @@ class SettlementBatchIntegrationTest {
     settlementRepository.saveAll(
         List.of(newSettlement(standardSeller, past), newSettlement(vipSeller, past)));
 
-    jobLauncherTestUtils.launchJob(paramsFor(target));
+    jobOperatorTestUtils.startJob(paramsFor(target));
 
     // 새로 INCOMPLETED 하나 추가
     settlementRepository.save(newSettlement(standardSeller, past));
 
     // when — 동일 기준일로 재실행 (JobParameter에 timestamp 추가로 새 instance)
-    JobExecution rerun = jobLauncherTestUtils.launchJob(paramsFor(target));
+    JobExecution rerun = jobOperatorTestUtils.startJob(paramsFor(target));
 
     // then — 새로 추가된 1건만 처리되고 기존 2건은 이미 COMPLETED라 Reader가 스킵
     assertThat(rerun.getStepExecutions().iterator().next().getWriteCount()).isEqualTo(1);
@@ -128,10 +142,47 @@ class SettlementBatchIntegrationTest {
     assertThat(all).allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
   }
 
+  @Test
+  @DisplayName("음수 정산금이 섞여 있으면 해당 건만 skip되고 정상 건은 COMPLETED로 처리된다")
+  void batch_skip_negative_netAmount() throws Exception {
+    // given — 정상 2건 + 음수 1건
+    LocalDate target = LocalDate.of(2026, 4, 24);
+    LocalDate past = target.minusDays(1);
+
+    Settlement valid1 = newSettlement(standardSeller, past);
+    Settlement valid2 = newSettlement(vipSeller, past);
+    Settlement negative = newSettlementWithNetAmount(standardSeller, past, new BigDecimal("-100"));
+    settlementRepository.saveAll(List.of(valid1, negative, valid2));
+
+    // when
+    JobExecution execution = jobOperatorTestUtils.startJob(paramsFor(target));
+
+    // then — Job은 성공, 음수 1건 skip, 정상 2건만 COMPLETED
+    assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+
+    var step = execution.getStepExecutions().iterator().next();
+    assertThat(step.getProcessSkipCount()).isEqualTo(1);
+    assertThat(step.getWriteCount()).isEqualTo(2);
+
+    Map<Long, SettlementStatus> byId =
+        settlementRepository.findAll().stream()
+            .collect(Collectors.toMap(Settlement::getId, Settlement::getStatus));
+
+    assertThat(byId.get(valid1.getId())).isEqualTo(SettlementStatus.COMPLETED);
+    assertThat(byId.get(valid2.getId())).isEqualTo(SettlementStatus.COMPLETED);
+    assertThat(byId.get(negative.getId())).isEqualTo(SettlementStatus.INCOMPLETED);
+  }
+
   private Settlement newSettlement(Seller seller, LocalDate date) {
     BigDecimal totalAmount = new BigDecimal("10000");
     FeeDetail fee = new FeeDetail(new BigDecimal("300"), new BigDecimal("500"));
     BigDecimal netAmount = totalAmount.subtract(fee.getTotalFee());
+    return new Settlement(seller, date, totalAmount, fee, netAmount);
+  }
+
+  private Settlement newSettlementWithNetAmount(Seller seller, LocalDate date, BigDecimal netAmount) {
+    BigDecimal totalAmount = new BigDecimal("10000");
+    FeeDetail fee = new FeeDetail(new BigDecimal("300"), new BigDecimal("500"));
     return new Settlement(seller, date, totalAmount, fee, netAmount);
   }
 

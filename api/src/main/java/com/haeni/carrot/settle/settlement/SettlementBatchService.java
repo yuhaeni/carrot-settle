@@ -9,7 +9,7 @@ import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SettlementBatchService {
 
-  private final JobLauncher jobLauncher;
+  private final JobOperator jobOperator;
   private final Job settlementJob;
 
   public CalculateSettlementResponseDto runSettlementJob(LocalDate targetDate) {
@@ -27,7 +27,7 @@ public class SettlementBatchService {
               .addLocalDate(SettlementBatchConfig.PARAM_TARGET_DATE, targetDate)
               .toJobParameters();
 
-      JobExecution execution = jobLauncher.run(settlementJob, parameters);
+      JobExecution execution = jobOperator.start(settlementJob, parameters);
       return CalculateSettlementResponseDto.from(execution);
     } catch (Exception e) {
       throw new BusinessException(ErrorCode.BATCH_EXECUTION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);

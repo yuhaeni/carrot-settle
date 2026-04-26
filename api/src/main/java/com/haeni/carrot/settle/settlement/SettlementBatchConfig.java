@@ -28,6 +28,7 @@ public class SettlementBatchConfig {
   public static final String STEP_NAME = "settlementStep";
   public static final String PARAM_TARGET_DATE = "targetDate";
   public static final int CHUNK_SIZE = 100;
+  public static final int SKIP_LIMIT = 100;
 
   @Bean
   public Job settlementJob(JobRepository jobRepository, Step settlementStep) {
@@ -42,10 +43,14 @@ public class SettlementBatchConfig {
       SettlementItemProcessor settlementItemProcessor,
       ItemWriter<Settlement> settlementWriter) {
     return new StepBuilder(STEP_NAME, jobRepository)
-        .<Settlement, Settlement>chunk(CHUNK_SIZE, transactionManager)
+        .<Settlement, Settlement>chunk(CHUNK_SIZE)
+        .transactionManager(transactionManager)
         .reader(settlementReader)
         .processor(settlementItemProcessor)
         .writer(settlementWriter)
+        .faultTolerant()
+        .skip(IllegalStateException.class)
+        .skipLimit(SKIP_LIMIT) // TODO skipLimit 100이 적절한지만 한 번 확인
         .build();
   }
 
