@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
@@ -32,7 +33,17 @@ import lombok.NoArgsConstructor;
           name = "idx_settlement_seller_date_status",
           columnList = "seller_id, settlement_date, status")
     })
+@NamedQuery(
+    name = Settlement.QUERY_FIND_INCOMPLETED_BEFORE,
+    query =
+        "SELECT s FROM Settlement s "
+            + "WHERE s.status = :status "
+            + "AND s.settlementDate < :targetDate "
+            + "AND s.skipCount < :skipThreshold "
+            + "ORDER BY s.id")
 public class Settlement extends BaseEntity {
+
+  public static final String QUERY_FIND_INCOMPLETED_BEFORE = "Settlement.findIncompletedBefore";
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,6 +68,9 @@ public class Settlement extends BaseEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal netAmount;
 
+  @Column(nullable = false)
+  private int skipCount;
+
   @Version private Long version;
 
   public Settlement(
@@ -75,5 +89,13 @@ public class Settlement extends BaseEntity {
 
   public void complete() {
     this.status = SettlementStatus.COMPLETED;
+  }
+
+  public void incrementSkipCount() {
+    this.skipCount = this.skipCount + 1;
+  }
+
+  public void block() {
+    this.status = SettlementStatus.BLOCKED;
   }
 }

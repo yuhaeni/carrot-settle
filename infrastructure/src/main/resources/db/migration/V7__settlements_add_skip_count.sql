@@ -1,0 +1,2 @@
+ALTER TABLE settlements
+  ADD COLUMN skip_count INTEGER NOT NULL DEFAULT 0;
