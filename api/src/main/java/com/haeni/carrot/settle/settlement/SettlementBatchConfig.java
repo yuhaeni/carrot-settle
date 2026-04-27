@@ -16,6 +16,7 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.batch.infrastructure.item.database.JpaPagingItemReader;
 import org.springframework.batch.infrastructure.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.batch.infrastructure.item.database.orm.JpaNamedQueryProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,9 @@ public class SettlementBatchConfig {
   public static final String STEP_NAME = "settlementStep";
   public static final String PARAM_TARGET_DATE = "targetDate";
   public static final int CHUNK_SIZE = 100;
-  public static final int SKIP_LIMIT = 100;
+
+  @Value("${settle.batch.skip-limit:10}")
+  private int skipLimit;
 
   @Bean
   public Job settlementJob(JobRepository jobRepository, Step settlementStep) {
@@ -51,7 +54,7 @@ public class SettlementBatchConfig {
         .writer(settlementWriter)
         .faultTolerant()
         .skip(IllegalStateException.class)
-        .skipLimit(SKIP_LIMIT) // TODO skipLimit 100이 적절한지만 한 번 확인
+        .skipLimit(skipLimit)
         .listener(settlementSkipListener)
         .build();
   }
@@ -65,13 +68,14 @@ public class SettlementBatchConfig {
     parameters.put("status", SettlementStatus.INCOMPLETED);
     parameters.put("targetDate", targetDate);
 
+    JpaNamedQueryProvider<Settlement> queryProvider = new JpaNamedQueryProvider<>();
+    queryProvider.setEntityClass(Settlement.class);
+    queryProvider.setNamedQuery(Settlement.QUERY_FIND_INCOMPLETED_BEFORE);
+
     return new JpaPagingItemReaderBuilder<Settlement>()
         .name("settlementReader")
         .entityManagerFactory(entityManagerFactory)
-        .queryString(
-            "SELECT s FROM Settlement s "
-                + "WHERE s.status = :status AND s.settlementDate < :targetDate "
-                + "ORDER BY s.id")
+        .queryProvider(queryProvider)
         .parameterValues(parameters)
         .pageSize(CHUNK_SIZE)
         .build();

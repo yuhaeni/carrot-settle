@@ -15,3 +15,7 @@ spring:
   batch:
     jdbc:
       initialize-schema: always
+
+settle:
+  batch:
+    skip-limit: 10

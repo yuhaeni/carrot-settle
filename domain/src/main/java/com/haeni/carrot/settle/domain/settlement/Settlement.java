@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
@@ -32,7 +33,15 @@ import lombok.NoArgsConstructor;
           name = "idx_settlement_seller_date_status",
           columnList = "seller_id, settlement_date, status")
     })
+@NamedQuery(
+    name = Settlement.QUERY_FIND_INCOMPLETED_BEFORE,
+    query =
+        "SELECT s FROM Settlement s "
+            + "WHERE s.status = :status AND s.settlementDate < :targetDate "
+            + "ORDER BY s.id")
 public class Settlement extends BaseEntity {
+
+  public static final String QUERY_FIND_INCOMPLETED_BEFORE = "Settlement.findIncompletedBefore";
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
