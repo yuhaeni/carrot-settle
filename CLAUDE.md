@@ -62,7 +62,8 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 
 - **수수료 계산**: `FeeCalculationService.calculate(amount, grade)` 단일 진입점. 각 수수료는 전용 Calculator(`PgFeeCalculator`, `PlatformFeeCalculator`)로 분리되어 `domain/fee`에 위치, api 모듈의 `FeeCalculationConfig`에서 Bean 등록
 - **수수료 VO**: `@Embeddable FeeDetail` (PG 수수료, 플랫폼 수수료, 총 수수료)
-- **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader`(INCOMPLETED + settlementDate < targetDate) → `SettlementItemProcessor`(COMPLETED 전이) → Writer(merge+flush+clear). `JobParameter`로 `targetDate` 수신, chunk 처리 후 `EntityManager.clear()`로 OOM 방지. `confirmOrder` 시점에 INCOMPLETED 레코드를 미리 생성 → 배치는 상태 전이만 담당 (스냅샷 방식으로 배치/환불 충돌 회피). Spring Batch 6.0.x 패키지 구조(`org.springframework.batch.infrastructure.item.*`) 사용
+- **정산 배치**: Spring Batch Chunk — `JpaPagingItemReader`(INCOMPLETED + settlementDate < targetDate) → `SettlementItemProcessor`(COMPLETED 전이) → Writer(merge+flush+clear). `JobParameter`로 `targetDate` 수신, chunk 처리 후 `EntityManager.clear()`로 OOM 방지. `confirmOrder` 시점에 INCOMPLETED 레코드를 미리 생성 → 배치는 상태 전이만 담당 (스냅샷 방식으로 배치/환불 충돌 회피). Spring Batch 6.0.x 패키지 구조(`org.springframework.batch.infrastructure.item.*`) 사용. JPQL은 `@NamedQuery`로 외부화 + `JpaNamedQueryProvider` 경로로 부트 시점 검증 (오타/필드 변경 시 컨텍스트 초기화 단계에서 실패)
+- **배치 skip 후처리 채널**: 음수 netAmount 등 `IllegalStateException` 기반 fault-tolerant skip은 `SettlementSkipListener.onSkipInProcess`에서 `ApplicationEventPublisher`로 `SettlementSkippedEvent` 발행 → `SettlementSkipEventListener`가 `Propagation.REQUIRES_NEW`로 별도 트랜잭션을 열어 `settlement_skip_logs`에 적재. Processor에서 직접 publish하면 chunk rollback에 휩쓸려 이벤트가 소실되므로 SkipListener 단계에서 발행하는 것이 핵심. M7(Kafka 도입) 시 `SettlementSkipEventListener`만 KafkaProducer 호출로 교체하면 SkipListener / 이벤트 record / Processor는 무변경
 - **정산 조회**: QueryDSL 동적 쿼리 + Redis Cache Aside (확정 데이터 TTL 1시간, 진행 중 5분)
 - **복합 인덱스**: `(seller_id, settlement_date, status)`
 - **동시성 제어**: `@Version` 낙관적 락 + `@Lock(PESSIMISTIC_WRITE)` 비관적 락 + Spring Retry (3회 재시도)
