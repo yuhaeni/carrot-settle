@@ -49,8 +49,8 @@ class SettlementItemProcessorTest {
     ReflectionTestUtils.setField(settlement, "id", 3L);
 
     assertThatThrownBy(() -> processor.process(settlement))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("음수 정산금")
+        .isInstanceOf(SettlementSkippableException.class)
+        .hasMessageContaining("NEGATIVE_AMOUNT")
         .hasMessageContaining("settlementId=3")
         .hasMessageContaining("netAmount=-100");
   }

@@ -174,6 +174,9 @@ class SettlementBatchIntegrationTest {
     assertThat(byId.get(valid1.getId())).isEqualTo(SettlementStatus.COMPLETED);
     assertThat(byId.get(valid2.getId())).isEqualTo(SettlementStatus.COMPLETED);
     assertThat(byId.get(negative.getId())).isEqualTo(SettlementStatus.INCOMPLETED);
+
+    Settlement reloaded = settlementRepository.findById(negative.getId()).orElseThrow();
+    assertThat(reloaded.getSkipCount()).isEqualTo(1);
   }
 
   private Settlement newSettlement(Seller seller, LocalDate date) {

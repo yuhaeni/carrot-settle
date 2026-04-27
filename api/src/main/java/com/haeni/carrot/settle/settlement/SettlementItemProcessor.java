@@ -29,8 +29,10 @@ public class SettlementItemProcessor implements ItemProcessor<Settlement, Settle
           item.getId(),
           item.getStatus(),
           item.getNetAmount());
-      throw new IllegalStateException(
-          "음수 정산금: settlementId=" + item.getId() + ", netAmount=" + item.getNetAmount());
+      throw new SettlementSkippableException(
+          SettlementSkippableException.SkipReason.NEGATIVE_AMOUNT,
+          item.getId(),
+          item.getNetAmount());
     }
 
     item.complete();

@@ -37,7 +37,9 @@ import lombok.NoArgsConstructor;
     name = Settlement.QUERY_FIND_INCOMPLETED_BEFORE,
     query =
         "SELECT s FROM Settlement s "
-            + "WHERE s.status = :status AND s.settlementDate < :targetDate "
+            + "WHERE s.status = :status "
+            + "AND s.settlementDate < :targetDate "
+            + "AND s.skipCount < :skipThreshold "
             + "ORDER BY s.id")
 public class Settlement extends BaseEntity {
 
@@ -66,6 +68,9 @@ public class Settlement extends BaseEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal netAmount;
 
+  @Column(nullable = false)
+  private int skipCount;
+
   @Version private Long version;
 
   public Settlement(
@@ -84,5 +89,13 @@ public class Settlement extends BaseEntity {
 
   public void complete() {
     this.status = SettlementStatus.COMPLETED;
+  }
+
+  public void incrementSkipCount() {
+    this.skipCount = this.skipCount + 1;
+  }
+
+  public void block() {
+    this.status = SettlementStatus.BLOCKED;
   }
 }

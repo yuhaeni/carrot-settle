@@ -33,6 +33,9 @@ public class SettlementBatchConfig {
   @Value("${settle.batch.skip-limit:10}")
   private int skipLimit;
 
+  @Value("${settle.batch.skip-block-threshold:3}")
+  private int skipBlockThreshold;
+
   @Bean
   public Job settlementJob(JobRepository jobRepository, Step settlementStep) {
     return new JobBuilder(JOB_NAME, jobRepository).start(settlementStep).build();
@@ -53,7 +56,7 @@ public class SettlementBatchConfig {
         .processor(settlementItemProcessor)
         .writer(settlementWriter)
         .faultTolerant()
-        .skip(IllegalStateException.class)
+        .skip(SettlementSkippableException.class)
         .skipLimit(skipLimit)
         .listener(settlementSkipListener)
         .build();
@@ -67,6 +70,7 @@ public class SettlementBatchConfig {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put("status", SettlementStatus.INCOMPLETED);
     parameters.put("targetDate", targetDate);
+    parameters.put("skipThreshold", skipBlockThreshold);
 
     JpaNamedQueryProvider<Settlement> queryProvider = new JpaNamedQueryProvider<>();
     queryProvider.setEntityClass(Settlement.class);

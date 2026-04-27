@@ -30,7 +30,11 @@ class SettlementSkipListenerTest {
     SettlementSkipListener listener = new SettlementSkipListener(eventPublisher);
     Settlement settlement = newSettlement(new BigDecimal("-100"));
     ReflectionTestUtils.setField(settlement, "id", 42L);
-    IllegalStateException cause = new IllegalStateException("음수 정산금: settlementId=42, netAmount=-100");
+    SettlementSkippableException cause =
+        new SettlementSkippableException(
+            SettlementSkippableException.SkipReason.NEGATIVE_AMOUNT,
+            42L,
+            new BigDecimal("-100"));
 
     listener.onSkipInProcess(settlement, cause);
 
@@ -43,6 +47,7 @@ class SettlementSkipListenerTest {
     assertThat(event.status()).isEqualTo(SettlementStatus.INCOMPLETED);
     assertThat(event.netAmount()).isEqualByComparingTo("-100");
     assertThat(event.reason()).isEqualTo(cause.getMessage());
+    assertThat(event.reason()).contains("NEGATIVE_AMOUNT");
     assertThat(event.occurredAt()).isNotNull();
   }
 
