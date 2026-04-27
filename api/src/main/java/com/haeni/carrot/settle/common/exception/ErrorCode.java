@@ -10,7 +10,9 @@ public enum ErrorCode {
   ORDER_NOT_FOUND("존재하지 않는 주문입니다."),
   INVALID_ORDER_STATUS("현재 주문 상태에서 해당 작업을 수행할 수 없습니다."),
   INVALID_INPUT("요청 값이 올바르지 않습니다."),
-  BATCH_EXECUTION_FAILED("정산 배치 실행에 실패했습니다.");
+  BATCH_EXECUTION_FAILED("정산 배치 실행에 실패했습니다."),
+  BATCH_ALREADY_COMPLETED("동일 기준일로 이미 완료된 정산 배치입니다."),
+  BATCH_ALREADY_RUNNING("동일 기준일의 정산 배치가 이미 실행 중입니다.");
 
   private final String message;
 }
