@@ -28,7 +28,9 @@ public class SettlementBatchConfig {
   public static final String JOB_NAME = "settlementJob";
   public static final String STEP_NAME = "settlementStep";
   public static final String PARAM_TARGET_DATE = "targetDate";
-  public static final int CHUNK_SIZE = 100;
+
+  @Value("${settle.batch.chunk-size:100}")
+  private int chunkSize;
 
   @Value("${settle.batch.skip-limit:10}")
   private int skipLimit;
@@ -50,7 +52,7 @@ public class SettlementBatchConfig {
       ItemWriter<Settlement> settlementWriter,
       SettlementSkipListener settlementSkipListener) {
     return new StepBuilder(STEP_NAME, jobRepository)
-        .<Settlement, Settlement>chunk(CHUNK_SIZE)
+        .<Settlement, Settlement>chunk(chunkSize)
         .transactionManager(transactionManager)
         .reader(settlementReader)
         .processor(settlementItemProcessor)
@@ -81,7 +83,7 @@ public class SettlementBatchConfig {
         .entityManagerFactory(entityManagerFactory)
         .queryProvider(queryProvider)
         .parameterValues(parameters)
-        .pageSize(CHUNK_SIZE)
+        .pageSize(chunkSize)
         .build();
   }
 
