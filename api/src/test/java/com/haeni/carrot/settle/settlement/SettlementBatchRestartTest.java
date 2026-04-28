@@ -92,6 +92,8 @@ class SettlementBatchRestartTest {
         .process(any());
     JobExecution failed = jobOperator.start(settlementJob, params);
     assertThat(failed.getStatus()).isEqualTo(BatchStatus.FAILED);
+    var failedStep = failed.getStepExecutions().iterator().next();
+    assertThat(failedStep.getWriteCount()).isZero();
 
     Mockito.doCallRealMethod().when(settlementItemProcessor).process(any());
     JobExecution rerun = jobOperator.start(settlementJob, params);
@@ -99,6 +101,16 @@ class SettlementBatchRestartTest {
     assertThat(rerun.getStatus()).isEqualTo(BatchStatus.COMPLETED);
     assertThat(rerun.getJobInstance().getInstanceId())
         .isEqualTo(failed.getJobInstance().getInstanceId());
+
+    // JpaPagingItemReader.saveState=true는 *commit된 page* 이후부터 재개. 본 테스트는
+    // 데이터 2건이 단일 chunk(=size 100) 안에 들어가 첫 실행에서 chunk가 통째로 rollback →
+    // page 위치도 보존되지 않으므로 재실행 시 readCount=2, writeCount=2로 처음부터 읽는다.
+    // 진짜 chunk-by-chunk 재개는 데이터가 chunk size를 넘어 첫 chunk만 commit된 이후 두
+    // 번째 chunk에서 실패하는 시나리오에서 의미가 있다.
+    var rerunStep = rerun.getStepExecutions().iterator().next();
+    assertThat(rerunStep.getReadCount()).isEqualTo(2);
+    assertThat(rerunStep.getWriteCount()).isEqualTo(2);
+
     assertThat(settlementRepository.findAll())
         .allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
   }
