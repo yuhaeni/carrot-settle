@@ -9,6 +9,8 @@ import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.launch.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,16 +23,21 @@ public class SettlementBatchService {
   private final Job settlementJob;
 
   public CalculateSettlementResponseDto runSettlementJob(LocalDate targetDate) {
-    try {
-      JobParameters parameters =
-          new JobParametersBuilder()
-              .addLocalDate(SettlementBatchConfig.PARAM_TARGET_DATE, targetDate)
-              .toJobParameters();
+    JobParameters parameters =
+        new JobParametersBuilder()
+            .addLocalDate(SettlementBatchConfig.PARAM_TARGET_DATE, targetDate)
+            .toJobParameters();
 
+    try {
       JobExecution execution = jobOperator.start(settlementJob, parameters);
       return CalculateSettlementResponseDto.from(execution);
+    } catch (JobInstanceAlreadyCompleteException e) {
+      throw new BusinessException(ErrorCode.BATCH_ALREADY_COMPLETED, HttpStatus.CONFLICT);
+    } catch (JobExecutionAlreadyRunningException e) {
+      throw new BusinessException(ErrorCode.BATCH_ALREADY_RUNNING, HttpStatus.CONFLICT);
     } catch (Exception e) {
-      throw new BusinessException(ErrorCode.BATCH_EXECUTION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new BusinessException(
+          ErrorCode.BATCH_EXECUTION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
