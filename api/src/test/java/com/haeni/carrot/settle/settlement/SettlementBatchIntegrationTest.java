@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,9 +34,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@TestPropertySource(properties = "settle.batch.chunk-size=10")
 class SettlementBatchIntegrationTest {
 
   @TestConfiguration
@@ -94,6 +97,93 @@ class SettlementBatchIntegrationTest {
 
     List<Settlement> all = settlementRepository.findAll();
     assertThat(all).hasSize(3);
+    assertThat(all).allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
+  }
+
+  @Test
+  @DisplayName("정산 데이터 100건이 모두 COMPLETED로 전이된다 (cursor 페이징 다중 chunk — 10 페이지)")
+  void batch_completes_100_settlements() throws Exception {
+    // given — chunkSize=10, 데이터 100건 → 10 chunk
+    LocalDate target = LocalDate.of(2026, 4, 24);
+    LocalDate past = target.minusDays(1);
+
+    List<Settlement> seeds =
+        IntStream.range(0, 100).mapToObj(i -> newSettlement(standardSeller, past)).toList();
+    settlementRepository.saveAll(seeds);
+
+    // when
+    JobExecution execution = jobOperatorTestUtils.startJob(paramsFor(target));
+
+    // then — Job 성공 + read/write 카운트 일치 + skip 0 + 모든 row COMPLETED 전이
+    assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+
+    var step = execution.getStepExecutions().iterator().next();
+    assertThat(step.getReadCount()).isEqualTo(100);
+    assertThat(step.getWriteCount()).isEqualTo(100);
+    assertThat(step.getProcessSkipCount()).isZero();
+    assertThat(step.getReadSkipCount()).isZero();
+    assertThat(step.getWriteSkipCount()).isZero();
+
+    List<Settlement> all = settlementRepository.findAll();
+    assertThat(all).hasSize(100);
+    assertThat(all).allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
+  }
+
+  @Test
+  @DisplayName("정산 데이터 500건이 모두 COMPLETED로 전이된다 (cursor 페이징 다중 chunk — 50 페이지)")
+  void batch_completes_500_settlements() throws Exception {
+    // given — chunkSize=10, 데이터 500건 → 50 chunk로 나뉘어 cursor 페이징으로 처리
+    LocalDate target = LocalDate.of(2026, 4, 24);
+    LocalDate past = target.minusDays(1);
+
+    List<Settlement> seeds =
+        IntStream.range(0, 500).mapToObj(i -> newSettlement(standardSeller, past)).toList();
+    settlementRepository.saveAll(seeds);
+
+    // when
+    JobExecution execution = jobOperatorTestUtils.startJob(paramsFor(target));
+
+    // then — Job 성공 + read/write 카운트 일치 + skip 0 + 모든 row COMPLETED 전이
+    assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+
+    var step = execution.getStepExecutions().iterator().next();
+    assertThat(step.getReadCount()).isEqualTo(500);
+    assertThat(step.getWriteCount()).isEqualTo(500);
+    assertThat(step.getProcessSkipCount()).isZero();
+    assertThat(step.getReadSkipCount()).isZero();
+    assertThat(step.getWriteSkipCount()).isZero();
+
+    List<Settlement> all = settlementRepository.findAll();
+    assertThat(all).hasSize(500);
+    assertThat(all).allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
+  }
+
+  @Test
+  @DisplayName(
+      "정산 데이터 1,000건 + chunk size 10 → 100 페이지 cursor 페이징으로 모두 COMPLETED 전이 (OFFSET 버그 회귀 검증)")
+  void batch_completes_1000_settlements_stress() throws Exception {
+    // given — OFFSET 페이징이었다면 정확히 절반(500건)만 처리되었을 stress case.
+    // chunk 10 × 1,000건 = 100 페이지로 OFFSET 누적 버그가 가장 강하게 재현되는 시나리오.
+    LocalDate target = LocalDate.of(2026, 4, 24);
+    LocalDate past = target.minusDays(1);
+
+    List<Settlement> seeds =
+        IntStream.range(0, 1000).mapToObj(i -> newSettlement(standardSeller, past)).toList();
+    settlementRepository.saveAll(seeds);
+
+    // when
+    JobExecution execution = jobOperatorTestUtils.startJob(paramsFor(target));
+
+    // then — 1,000건 모두 cursor 페이징으로 누락 없이 처리
+    assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+
+    var step = execution.getStepExecutions().iterator().next();
+    assertThat(step.getReadCount()).isEqualTo(1000);
+    assertThat(step.getWriteCount()).isEqualTo(1000);
+    assertThat(step.getProcessSkipCount()).isZero();
+
+    List<Settlement> all = settlementRepository.findAll();
+    assertThat(all).hasSize(1000);
     assertThat(all).allMatch(s -> s.getStatus() == SettlementStatus.COMPLETED);
   }
 

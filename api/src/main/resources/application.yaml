@@ -14,8 +14,13 @@ spring:
       timeout: 2000ms
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
 
-settle:
-  batch:
-    skip-limit: 10
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info, metrics
+  metrics:
+    tags:
+      application: carrot-settle
