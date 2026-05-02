@@ -7,6 +7,8 @@ import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.EnableJdbcJobRepository;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -21,6 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
+@EnableBatchProcessing
+@EnableJdbcJobRepository
 public class SettlementBatchConfig {
 
   public static final String JOB_NAME = "settlementJob";
@@ -83,6 +87,8 @@ public class SettlementBatchConfig {
         new JpaPagingItemReader<Settlement>(entityManagerFactory) {
           private long lastIdSeen = 0L;
 
+          // page counter 자동 증가를 막아 OFFSET=0 고정. cursor(id > :lastId)가 위치를 책임지므로
+          // OFFSET이 누적되면 lastId 이후 (page * pageSize)건이 추가로 skip되어 row 누락 발생.
           @Override
           public int getPage() {
             return 0;

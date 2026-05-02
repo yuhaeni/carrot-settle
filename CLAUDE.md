@@ -55,6 +55,7 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 | `PATCH` | `/api/v1/orders/{id}/refund` | 환불 처리 (PAID → REFUNDED, 정산 대상 제외) |
 | `GET` | `/api/v1/settlements` | 정산 내역 조회 (sellerId, 기간, status 필터 + 페이징) |
 | `POST` | `/api/v1/settlements/calculate` | 정산 배치 수동 트리거 (body: `{ "targetDate": "yyyy-MM-dd" }` — 해당일 자정 이전 INCOMPLETED만 대상) |
+| `GET` | `/api/v1/admin/batch-jobs/executions/{jobExecutionId}` | 배치 실행 메트릭 조회 (status / readCount / writeCount / commitCount / elapsedMs / impliedPerChunkMs). `JobRepository` 메타테이블 wrap — 벤치마크 자동화/운영 모니터링용 generic 엔드포인트 |
 
 구매 확정은 매일 새벽 2시 `@Scheduled` 자동 실행도 병행한다. 자동 확정 스케줄러는 `OrderScheduler` 빈으로 분리 — `orderService.confirmOrder(id)` 호출 시 `@Transactional` 프록시 정상 동작 보장 (self-invocation 회피).
 
@@ -70,7 +71,7 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 - **동시성 제어**: `@Version` 낙관적 락 + `@Lock(PESSIMISTIC_WRITE)` 비관적 락 + Spring Retry (3회 재시도)
 - **비동기 처리**: `@Async` + `CompletableFuture` — `AsyncConfig`(ThreadPoolTaskExecutor)로 스레드 풀 관리
 - **모니터링**: Spring Actuator + Micrometer + Prometheus + Grafana (`compose.yaml`에 포함). Prometheus(9090)는 host의 Spring Boot `/actuator/prometheus`를 `host.docker.internal:8080`으로 scrape, Grafana(호스트 3001 → 컨테이너 3000)는 Prometheus를 default datasource로 자동 provisioning(`monitoring/grafana/provisioning/`). 호스트 3000은 다른 dev 도구와 충돌 잦아 3001로 매핑. actuator 노출은 `application.yaml`의 `management.endpoints.web.exposure.include=prometheus,health,info,metrics`. 커스텀 메트릭 네이밍: `carrot.settle.*`
-- **부하 테스트**: k6 스크립트로 주요 API TPS/P95 측정. 결과는 `docs/load-test/` 에 기록. 정산 배치 chunk size별 처리 시간은 `docs/load-test/chunk-size-benchmark.md` 절차에 따라 측정 (chunk 10/100/500 × 데이터 1K/10K)
+- **부하 테스트**: k6 스크립트로 주요 API TPS/P95 측정. 결과는 `docs/load-test/` 에 기록. 정산 배치 chunk size별 처리 시간은 `docs/load-test/chunk-size-benchmark.md` 절차에 따라 측정 — chunk 10/100/500 × 데이터 1K/10K/100K **9 cell 완료 → default chunk-size=100 채택** (chunk 500이 시간 3~11% 빠르지만 single commit lock 보유 시간 ×4.7로 동시성 cost 정당화 못함). 측정 자료원 하이브리드: (a) step 시간 → `BatchAdminController` admin endpoint(`elapsedMs`/`impliedPerChunkMs`, DB 메타테이블 wrap), (b) heap 피크 → Grafana `jvm_memory_used_bytes` (JVM 메트릭은 batch 메타테이블에 없음), (c) chunk write → 짧은 배치는 admin endpoint impliedMs / 긴 배치는 Grafana ratio. cell 자동화는 `scripts/benchmark-cell.sh`(reset → seed → trigger → metrics fetch + read=write 검증). chunk size 변경 시 `bootRun` cold restart 필수(devtools auto-reload는 Micrometer registry 비우지 못해 cumulative counter 오염)
 - **N+1 해결**: 시나리오에 따라 방식 구분
   - 단건 상세 조회: `JOIN FETCH` — 항상 1회 쿼리 보장, 페이지네이션 없고 컬렉션 1개인 경우 적합
   - 목록 + 페이지네이션: `@BatchSize` (또는 글로벌 `default_batch_fetch_size: 100`) — LIMIT/OFFSET 충돌 없이 IN 절로 처리
