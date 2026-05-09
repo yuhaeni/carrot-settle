@@ -110,7 +110,6 @@ public class SettlementBatchConfig {
     reader.setParameterValues(parameters);
     reader.setPageSize(chunkSize);
     reader.setTransacted(false);
-    reader.setSaveState(false);
     return reader;
   }
 
