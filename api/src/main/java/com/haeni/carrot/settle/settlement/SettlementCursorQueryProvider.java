@@ -6,14 +6,6 @@ import org.springframework.batch.infrastructure.item.database.orm.AbstractJpaQue
 
 class SettlementCursorQueryProvider extends AbstractJpaQueryProvider {
 
-  private static final String JPQL =
-      "SELECT s FROM Settlement s "
-          + "WHERE s.status = :status "
-          + "AND s.skipCount < :skipThreshold "
-          + "AND s.settlementDate < :targetDate "
-          + "AND s.id > :lastId "
-          + "ORDER BY s.id";
-
   private long lastId = 0L;
 
   void setLastId(long lastId) {
@@ -22,7 +14,9 @@ class SettlementCursorQueryProvider extends AbstractJpaQueryProvider {
 
   @Override
   public Query createQuery() {
-    return getEntityManager().createQuery(JPQL, Settlement.class).setParameter("lastId", lastId);
+    return getEntityManager()
+        .createNamedQuery(Settlement.QUERY_FIND_INCOMPLETED_BEFORE_BY_CURSOR, Settlement.class)
+        .setParameter("lastId", lastId);
   }
 
   @Override
