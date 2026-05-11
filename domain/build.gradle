@@ -1,12 +1,24 @@
 dependencies {
 	implementation 'jakarta.persistence:jakarta.persistence-api'
+	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}:jakarta"
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor "com.querydsl:querydsl-apt:${queryDslVersion}:jakarta"
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
 	testImplementation 'org.junit.jupiter:junit-jupiter'
 	testImplementation 'org.assertj:assertj-core'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+sourceSets {
+	main {
+		java {
+			srcDir layout.buildDirectory.dir('generated/sources/annotationProcessor/java/main')
+		}
+	}
 }
 
 tasks.named('test') {

@@ -84,6 +84,15 @@ Seller → Product → OrderItem → Order → Payment → Settlement → Payout
 - `infrastructure`는 `java-library` 플러그인 + `api` 설정으로 `domain`과 `spring-boot-starter-data-jpa`를 `api` 모듈에 전이 노출
 - `api` 모듈은 `implementation project(':domain')`을 직접 선언하여 도메인 클래스에 접근
 - `api` 모듈은 `spring-tx`를 직접 선언하여 `@Transactional` 사용
+- **QueryDSL apt 위치**: `querydsl-apt` annotation processor + `querydsl-jpa` 의존성을 **`domain` 모듈에 배치**. Q-class는 `@Entity`가 정의된 모듈에서만 생성됨 — apt가 의존성 JAR의 엔티티를 스캔하지 않으므로 인프라/api에 apt를 두면 빈 처리됨. domain의 generated 소스 디렉터리(`build/generated/sources/annotationProcessor/java/main`)를 sourceSet에 등록해 Q-class를 컴파일 산출물에 포함 → 의존 모듈은 transitive로 접근
+
+### QueryDSL Custom Repository 패턴
+
+- `SettlementRepositoryCustom` 인터페이스 + `SettlementRepositoryImpl` 구현체를 infrastructure에 배치 (Spring Data JPA 명명 규약: `<Repo>Impl` 자동 인식)
+- `JPAQueryFactory`는 별도 Bean 등록 없이 Impl 생성자에서 `EntityManager`로 직접 인스턴스화 — 글로벌 Bean 회피로 의존성 최소화
+- 동적 조건은 `BooleanBuilder`로 조립, 페이징은 `Pageable` 그대로 사용 + `PageImpl` 반환
+- ManyToOne 연관 (예: `seller`) 은 `leftJoin().fetchJoin()`과 페이징 조합이 안전. 응답에 셀러 정보가 필요하면 fetch join으로 N+1 회피
+- 정렬 안정성: 동일 날짜 항목이 페이지 사이로 빠지는 것을 막기 위해 `(settlementDate desc, id desc)`처럼 unique tie-breaker 포함
 
 ### 에러 처리 패턴
 
