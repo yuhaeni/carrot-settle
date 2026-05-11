@@ -69,7 +69,18 @@ public class SettlementBatchConfig {
   /**
    * cursor 기반 페이징. JPQL의 {@code id > :lastId ORDER BY id}로 OFFSET 누적을 회피한다. {@code getPage()}를 0으로
    * 고정 + {@code read()} 호출마다 lastId를 갱신하여 state-mutating filter(INCOMPLETED → COMPLETED) 환경에서도 row 누락
-   * 없이 다중 chunk 처리. {@code saveState=false}로 멱등 restart(처음부터 재시작해도 처리된 row는 filter가 자동 제외) 시맨틱.
+   * 없이 다중 chunk 처리. 멱등 restart는 filter {@code status=INCOMPLETED}가 처리된 row를 자동 제외해주므로 별도 보장 불필요
+   * (saveState는 default true 유지).
+   *
+   * <p><b>도메인 가정</b> — 두 가정 중 하나라도 깨지면 cursor 전략 재설계 필요:
+   *
+   * <ol>
+   *   <li><b>Settlement.id 단조 증가</b> — PostgreSQL {@code bigserial}로 충족. id 재사용/롤백/수동 삽입이 발생하면 cursor가
+   *       처리한 영역을 다시 만나거나 중간 row를 건너뜀.
+   *   <li><b>자정 cutoff batch</b> — {@code settlementDate < targetDate} 필터로 batch 도중 새 row(오늘 confirm된 주문)는
+   *       대상에서 자동 제외됨. 만약 진행 중인 day의 INCOMPLETED를 처리하는 시나리오로 변경되면 cursor가 이미 지나간 id
+   *       구간에 새 row가 끼어들어 누락 발생 가능.
+   * </ol>
    */
   @Bean
   @StepScope
