@@ -34,16 +34,20 @@ import lombok.NoArgsConstructor;
           columnList = "seller_id, settlement_date, status")
     })
 @NamedQuery(
-    name = Settlement.QUERY_FIND_INCOMPLETED_BEFORE,
+    name = Settlement.QUERY_FIND_INCOMPLETED_BEFORE_BY_CURSOR,
     query =
-        "SELECT s FROM Settlement s "
-            + "WHERE s.status = :status "
-            + "AND s.settlementDate < :targetDate "
-            + "AND s.skipCount < :skipThreshold "
-            + "ORDER BY s.id")
+        """
+        SELECT s FROM Settlement s
+        WHERE s.status = :status
+        AND s.skipCount < :skipThreshold
+        AND s.settlementDate < :targetDate
+        AND s.id > :lastId
+        ORDER BY s.id
+        """)
 public class Settlement extends BaseEntity {
 
-  public static final String QUERY_FIND_INCOMPLETED_BEFORE = "Settlement.findIncompletedBefore";
+  public static final String QUERY_FIND_INCOMPLETED_BEFORE_BY_CURSOR =
+      "Settlement.findIncompletedBeforeByCursor";
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

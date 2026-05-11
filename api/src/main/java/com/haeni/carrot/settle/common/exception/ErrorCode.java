@@ -12,7 +12,8 @@ public enum ErrorCode {
   INVALID_INPUT("요청 값이 올바르지 않습니다."),
   BATCH_EXECUTION_FAILED("정산 배치 실행에 실패했습니다."),
   BATCH_ALREADY_COMPLETED("동일 기준일로 이미 완료된 정산 배치입니다."),
-  BATCH_ALREADY_RUNNING("동일 기준일의 정산 배치가 이미 실행 중입니다.");
+  BATCH_ALREADY_RUNNING("동일 기준일의 정산 배치가 이미 실행 중입니다."),
+  BATCH_JOB_EXECUTION_NOT_FOUND("존재하지 않는 배치 실행입니다.");
 
   private final String message;
 }
